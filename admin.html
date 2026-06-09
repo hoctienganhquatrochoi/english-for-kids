@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin v3 – English for Kids</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{--blue:#1565C0;--blue2:#2196F3;--green:#2E7D32;--green2:#43A047;--orange:#E65100;--orange2:#FB8C00;--red:#C62828;--bg:#F4F7FB;--card:#fff;--text:#1A2332;--muted:#6B7A8D;--border:#E2E8F0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,0.08);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.screen{display:none;}
+.screen.active{display:block;}
+/* LOGIN */
+#s-login{min-height:100vh;background:linear-gradient(135deg,var(--blue),var(--blue2));display:none;align-items:center;justify-content:center;}
+#s-login.active{display:flex;}
+.login-box{background:var(--card);border-radius:20px;padding:36px 32px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
+.login-logo{text-align:center;font-size:48px;margin-bottom:12px;}
+.login-title{font-family:'Baloo 2',cursive;font-size:1.5rem;font-weight:800;text-align:center;color:var(--blue);margin-bottom:4px;}
+.login-sub{color:var(--muted);font-size:0.85rem;text-align:center;margin-bottom:24px;}
+.form-group{margin-bottom:14px;}
+.form-label{font-size:0.8rem;font-weight:700;color:var(--muted);display:block;margin-bottom:4px;}
+.form-input{width:100%;padding:10px 13px;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.92rem;outline:none;transition:border-color 0.2s;}
+.form-input:focus{border-color:var(--blue2);}
+.btn{padding:11px 20px;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-weight:700;font-size:0.92rem;cursor:pointer;transition:all 0.18s;}
+.btn-primary{background:var(--blue2);color:#fff;box-shadow:0 4px 12px rgba(33,150,243,0.3);}
+.btn-primary:hover{background:var(--blue);transform:translateY(-1px);}
+.btn-success{background:var(--green2);color:#fff;}
+.btn-success:hover{background:var(--green);}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-outline{background:transparent;border:2px solid var(--blue2);color:var(--blue2);}
+.btn-sm{padding:7px 14px;font-size:0.82rem;}
+.btn-full{width:100%;}
+/* LAYOUT */
+#s-admin{min-height:100vh;display:none;flex-direction:column;}
+#s-admin.active{display:flex;}
+.admin-nav{background:linear-gradient(135deg,var(--blue),var(--blue2));padding:0 24px;display:flex;align-items:center;gap:0;position:sticky;top:0;z-index:100;box-shadow:0 3px 12px rgba(21,101,192,0.3);}
+.nav-brand{font-family:'Baloo 2',cursive;font-weight:800;color:#fff;font-size:1.1rem;padding:14px 20px 14px 0;border-right:1px solid rgba(255,255,255,0.2);margin-right:8px;white-space:nowrap;}
+.nav-tab{padding:16px 16px;color:rgba(255,255,255,0.7);font-weight:700;font-size:0.88rem;cursor:pointer;border-bottom:3px solid transparent;transition:all 0.2s;white-space:nowrap;}
+.nav-tab.active,.nav-tab:hover{color:#fff;border-bottom-color:#FFD93D;}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.nav-user{color:rgba(255,255,255,0.85);font-size:0.82rem;}
+.nav-logout{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:6px;color:#fff;padding:5px 12px;font-size:0.78rem;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;}
+.admin-content{flex:1;padding:24px;max-width:1200px;margin:0 auto;width:100%;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+/* CARDS */
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+.page-title{font-family:'Baloo 2',cursive;font-size:1.4rem;font-weight:800;}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px;}
+.card-title{font-weight:800;font-size:1rem;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px;}
+.stat-card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);text-align:center;border-top:3px solid;}
+.stat-num{font-family:'Baloo 2',cursive;font-size:2rem;font-weight:800;line-height:1.1;}
+.stat-lbl{font-size:0.78rem;color:var(--muted);margin-top:4px;font-weight:600;}
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:0.88rem;}
+.tbl th{text-align:left;padding:10px 14px;background:var(--bg);font-weight:700;font-size:0.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);}
+.tbl td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.tbl tr:hover td{background:#FAFBFF;}
+.tbl tr:last-child td{border-bottom:none;}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.72rem;font-weight:700;}
+.badge-blue{background:#E3F2FD;color:var(--blue);}
+.badge-green{background:#E8F5E9;color:var(--green);}
+.badge-orange{background:#FFF3E0;color:var(--orange);}
+.badge-red{background:#FFEBEE;color:var(--red);}
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:500;display:none;align-items:center;justify-content:center;padding:16px;}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--card);border-radius:var(--radius);padding:24px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
+.modal-title{font-family:'Baloo 2',cursive;font-size:1.2rem;font-weight:800;margin-bottom:18px;}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}
+/* PROGRESS */
+.progress-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:3px;transition:width 0.8s ease;}
+/* STUDENT DETAIL */
+.student-profile{display:flex;align-items:center;gap:16px;margin-bottom:20px;}
+.student-av{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#E3F2FD,#BBDEFB);display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;overflow:hidden;}
+.student-av img{width:100%;height:100%;object-fit:cover;}
+.session-row{background:var(--bg);border-radius:8px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:background 0.15s;}
+.session-row:hover{background:#EEF2FF;}
+.score-mini{display:flex;gap:6px;}
+.score-mini-item{text-align:center;background:var(--card);border-radius:6px;padding:6px 10px;flex:1;}
+.score-mini-lbl{font-size:0.68rem;color:var(--muted);font-weight:700;}
+.score-mini-val{font-family:'Baloo 2',cursive;font-size:1.1rem;font-weight:800;}
+/* UPLOAD AREA */
+.upload-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;text-align:center;cursor:pointer;transition:all 0.2s;}
+.upload-area:hover{border-color:var(--blue2);background:var(--bg);}
+.upload-area input{display:none;}
+/* SEARCH */
+.search-wrap{position:relative;flex:1;max-width:280px;}
+.search-input{width:100%;padding:9px 13px 9px 36px;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.88rem;outline:none;}
+.search-input:focus{border-color:var(--blue2);}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:1rem;}
+/* EMPTY */
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted);}
+.empty-state .empty-icon{font-size:48px;display:block;margin-bottom:8px;}
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:#323232;color:#fff;padding:10px 18px;border-radius:20px;font-size:0.85rem;font-weight:600;z-index:9999;transform:translateY(60px);transition:transform 0.3s;pointer-events:none;}
+.toast.show{transform:translateY(0);}
+/* CHART SIMPLE */
+.chart-bars{display:flex;align-items:flex-end;gap:4px;height:60px;}
+.chart-bar{flex:1;border-radius:3px 3px 0 0;min-width:8px;transition:height 0.6s;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- ═══ LOGIN ═══ -->
+<div class="screen active" id="s-login">
+  <div class="login-box">
+    <div class="login-logo">🛠️</div>
+    <div class="login-title">Admin Panel</div>
+    <div class="login-sub">English for Kids – Học qua Trò Chơi</div>
+    <div class="form-group"><label class="form-label">Tên đăng nhập</label><input class="form-input" id="a-user" type="text" placeholder="admin" value="admin"></div>
+    <div class="form-group"><label class="form-label">Mật khẩu</label><input class="form-input" id="a-pass" type="password" placeholder="••••••" value="efk2024"></div>
+    <button class="btn btn-primary btn-full" onclick="adminLogin()" style="margin-top:4px;">Đăng nhập</button>
+    <div style="color:var(--red);font-size:0.82rem;text-align:center;margin-top:8px;display:none;" id="a-err">❌ Sai thông tin đăng nhập!</div>
+  </div>
+</div>
+
+<!-- ═══ ADMIN ═══ -->
+<div class="screen" id="s-admin">
+  <nav class="admin-nav">
+    <div class="nav-brand">🌟 EFK Admin</div>
+    <div class="nav-tab active" onclick="switchTab('tab-dashboard',this)">📊 Dashboard</div>
+    <div class="nav-tab" onclick="switchTab('tab-students',this)">👥 Học sinh</div>
+    <div class="nav-tab" onclick="switchTab('tab-progress',this)">📈 Tiến trình</div>
+    <div class="nav-tab" onclick="switchTab('tab-pictures',this)">🖼️ Tranh nói</div>
+    <div class="nav-tab" onclick="switchTab('tab-books',this)">📚 Quản lý sách</div>
+    <div class="nav-tab" onclick="switchTab('tab-curriculum',this)">📝 Giáo trình</div>
+    <div class="nav-right">
+      <span class="nav-user" id="nav-user">Admin</span>
+      <button class="nav-logout" onclick="adminLogout()">Thoát</button>
+    </div>
+  </nav>
+
+  <div class="admin-content">
+
+    <!-- ── DASHBOARD ── -->
+    <div class="tab-panel active" id="tab-dashboard">
+      <div class="page-header"><div class="page-title">📊 Tổng quan hôm nay</div><div id="dash-date" style="color:var(--muted);font-size:0.88rem;"></div></div>
+      <div class="stats-grid">
+        <div class="stat-card" style="border-color:#2196F3;"><div class="stat-num" style="color:#2196F3;" id="d-total-students">—</div><div class="stat-lbl">Tổng học sinh</div></div>
+        <div class="stat-card" style="border-color:#43A047;"><div class="stat-num" style="color:#43A047;" id="d-sessions-today">—</div><div class="stat-lbl">Bài luyện hôm nay</div></div>
+        <div class="stat-card" style="border-color:#FB8C00;"><div class="stat-num" style="color:#FB8C00;" id="d-avg-score">—</div><div class="stat-lbl">Điểm TB tuần này</div></div>
+        <div class="stat-card" style="border-color:#9C27B0;"><div class="stat-num" style="color:#9C27B0;" id="d-total-sessions">—</div><div class="stat-lbl">Tổng bài đã luyện</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="card">
+          <div class="card-title">🏆 Top học sinh tuần này</div>
+          <div id="top-students-list"><div class="empty-state"><span class="empty-icon">🌟</span><div>Chưa có dữ liệu</div></div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">🕐 Hoạt động gần đây</div>
+          <div id="recent-activity"><div class="empty-state"><span class="empty-icon">💤</span><div>Chưa có hoạt động</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STUDENTS ── -->
+    <div class="tab-panel" id="tab-students">
+      <div class="page-header">
+        <div class="page-title">👥 Quản lý học sinh</div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <div class="search-wrap"><span class="search-icon">🔍</span><input class="search-input" id="student-search" placeholder="Tìm học sinh..." oninput="filterStudents()"></div>
+          <button class="btn btn-primary btn-sm" onclick="openAddStudent()">+ Thêm học sinh</button>
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <table class="tbl">
+          <thead><tr><th>Học sinh</th><th>Username</th><th>Lớp</th><th>Ngày tham gia</th><th>Bài đã luyện</th><th>Điểm TB</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+          <tbody id="students-tbody"><tr><td colspan="8" style="text-align:center;padding:30px;color:var(--muted);">Đang tải...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── PROGRESS ── -->
+    <div class="tab-panel" id="tab-progress">
+      <div class="page-header">
+        <div class="page-title">📈 Tiến trình học sinh</div>
+        <select class="form-input" id="progress-student-select" style="max-width:220px;" onchange="loadStudentProgress()">
+          <option value="">— Chọn học sinh —</option>
+        </select>
+      </div>
+      <div id="progress-content">
+        <div class="empty-state"><span class="empty-icon">📊</span><div>Chọn một học sinh để xem tiến trình</div></div>
+      </div>
+    </div>
+
+    <!-- ── PICTURES ── -->
+    <div class="tab-panel" id="tab-pictures">
+      <div class="page-header">
+        <div class="page-title">🖼️ Quản lý tranh luyện nói</div>
+        <button class="btn btn-primary btn-sm" onclick="openAddPicture()">+ Thêm tranh</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;" id="pictures-grid">
+        <div class="empty-state" style="grid-column:1/-1;"><span class="empty-icon">🖼️</span><div>Chưa có tranh nào. Thêm tranh để học sinh luyện nói!</div></div>
+      </div>
+    </div>
+
+    <!-- ── BOOKS ── -->
+    <div class="tab-panel" id="tab-books">
+      <div class="page-header">
+        <div class="page-title">📚 Quản lý sách & giáo trình</div>
+        <button class="btn btn-primary btn-sm" onclick="openAddBook()">+ Thêm sách mới</button>
+      </div>
+
+      <div class="card" style="background:linear-gradient(135deg,#E8F5E9,#F3E5F5);border:2px solid #A5D6A7;margin-bottom:16px;">
+        <div style="font-size:1.2rem;margin-bottom:6px;">💡 Quản lý linh hoạt</div>
+        <div style="font-size:0.88rem;line-height:1.8;">
+          Thêm sách mới, chỉnh sửa tên/màu sắc/icon, tắt/bật hiển thị cho học sinh, sắp xếp thứ tự hiển thị.<br>
+          Mỗi sách có thể có nhiều <b>Level / Lớp</b> — học sinh sẽ chọn sách → chọn level → chọn unit để luyện nói.
+        </div>
+      </div>
+
+      <div class="card" style="border:2px solid #A5D6A7;background:#E8F5E9;margin-bottom:16px;">
+        <div style="font-weight:800;margin-bottom:4px;">✅ Tất cả sách được quản lý từ đây</div>
+        <div style="font-size:0.85rem;color:var(--muted);">Thêm, sửa, xóa, ẩn/hiện bất kỳ sách nào. Lần đầu hãy chạy file <b>insert_default_books.sql</b> để thêm sách mặc định vào hệ thống.</div>
+      </div>
+
+      <!-- Custom books grid -->
+      <div id="books-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;">
+        <div style="text-align:center;padding:40px;color:var(--muted);grid-column:1/-1;">
+          <div style="font-size:2rem;margin-bottom:8px;">📭</div>
+          <div>Chưa có sách tuỳ chỉnh. Nhấn "+ Thêm sách mới" để bắt đầu!</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CURRICULUM ── -->
+    <div class="tab-panel" id="tab-curriculum">
+      <div class="page-header"><div class="page-title">📝 Quản lý nội dung giáo trình</div></div>
+
+      <div class="card" style="background:linear-gradient(135deg,#E3F2FD,#E8F5E9);border:2px solid #90CAF9;">
+        <div style="font-size:1.3rem;margin-bottom:6px;">💡 Cách dùng nhanh nhất</div>
+        <div style="font-size:0.88rem;color:var(--text);line-height:1.8;">
+          <b>Lần đầu:</b> Paste toàn bộ nội dung 1 quyển sách → AI tự chia từng unit → Lưu hết 1 lần 🚀<br>
+          <b>Cập nhật:</b> Nhấn <b>✏️ Sửa</b> ở unit muốn thay → Paste nội dung mới → Lưu
+        </div>
+      </div>
+
+      <!-- BULK PASTE -->
+      <div class="card" style="border:2px solid #FFD54F;background:linear-gradient(135deg,#FFFDE7,#FFF9C4);">
+        <div class="card-title">🤖 Paste cả quyển sách — AI tự chia theo unit</div>
+        <div style="color:var(--muted);font-size:0.85rem;margin-bottom:14px;">
+          Paste toàn bộ nội dung từ NotebookLM (hoặc bất kỳ nguồn nào). AI sẽ tự nhận diện từng unit, trích xuất từ vựng + mẫu câu + gợi ý luyện nói rồi lưu tất cả vào hệ thống một lần.
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Sách *</label>
+            <select class="form-input" id="bulk-book">
+              <option value="gs">Global Success</option>
+              <option value="faf">Family &amp; Friends</option>
+              <option value="mamnon">Mầm non</option>
+              <option value="topics">Chủ đề tự do</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Level / Lớp *</label>
+            <input class="form-input" id="bulk-level" placeholder="Ví dụ: gs3, gs4, gs5, faf1, faf2...">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">📋 Paste toàn bộ nội dung sách vào đây</label>
+          <textarea class="form-input" id="bulk-raw-input" rows="12"
+            placeholder="Paste nguyên từ NotebookLM, ví dụ:&#10;&#10;Unit 1 - Hello!&#10;Từ vựng: pen (bút mực), rubber (tẩy), pencil (bút chì), ruler (thước kẻ)&#10;Mẫu câu: What&apos;s this? It&apos;s a pen. Open the book. Close the door.&#10;&#10;Unit 2 - My School&#10;Từ vựng: school, classroom, teacher, student, desk, chair&#10;Mẫu câu: This is my school. Where is the classroom?&#10;&#10;... (Có thể paste cả quyển, nhiều unit cùng lúc!)"></textarea>
+        </div>
+        <!-- TWO METHODS -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">
+          <!-- METHOD 1: JSON import -->
+          <div style="background:white;border-radius:10px;padding:14px;border:2px solid #43A047;">
+            <div style="font-weight:800;font-size:0.88rem;color:#2E7D32;margin-bottom:6px;">✅ Cách 1: Import JSON (Khuyên dùng)</div>
+            <div style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;">Paste văn bản lên Claude.ai → Claude tạo file JSON → import vào đây. Không cần API key!</div>
+            <input type="file" id="json-file-input" accept=".json" style="display:none;" onchange="importJSON(this)">
+            <button class="btn btn-success btn-sm" onclick="document.getElementById('json-file-input').click()" style="width:100%;margin-bottom:6px;">
+              📂 Import file JSON
+            </button>
+            <button class="btn btn-outline btn-sm" onclick="pasteJSONDirect()" style="width:100%;">
+              📋 Paste JSON trực tiếp
+            </button>
+          </div>
+          <!-- METHOD 2: Need API key -->
+          <div style="background:white;border-radius:10px;padding:14px;border:2px solid #E8EDF2;opacity:0.7;">
+            <div style="font-weight:800;font-size:0.88rem;color:var(--muted);margin-bottom:6px;">🔑 Cách 2: AI tự động (Cần API key)</div>
+            <div style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;">Cần Anthropic API key trả phí. Nếu có key, nhập vào đây để dùng.</div>
+            <input class="form-input" id="user-api-key" type="password" placeholder="sk-ant-..." style="font-size:0.82rem;padding:7px 10px;margin-bottom:6px;">
+            <button class="btn btn-primary btn-sm" id="bulk-extract-btn" onclick="bulkExtract()" style="width:100%;">
+              ✨ Phân tích tự động
+            </button>
+          </div>
+        </div>
+        <div id="bulk-status" style="margin-top:12px;font-size:0.85rem;display:none;padding:10px;border-radius:8px;"></div>
+        <div id="bulk-progress-wrap" style="margin-top:12px;display:none;">
+          <div style="font-size:0.85rem;font-weight:700;color:var(--text);margin-bottom:6px;" id="bulk-progress-label">Đang xử lý...</div>
+          <div style="background:#E8EDF2;border-radius:6px;height:10px;overflow:hidden;">
+            <div id="bulk-progress-bar" style="height:100%;background:linear-gradient(90deg,#FF8F00,#43A047);border-radius:6px;width:0%;transition:width 0.6s;"></div>
+          </div>
+        </div>
+
+        <!-- PASTE JSON AREA (hidden) -->
+        <div id="paste-json-area" style="display:none;margin-top:12px;">
+          <div style="font-size:0.85rem;font-weight:700;margin-bottom:6px;">📋 Paste JSON vào đây:</div>
+          <textarea class="form-input" id="json-paste-input" rows="8" placeholder='[{"unit_number":"1","vocab_list":["pen","rubber"],"sample_sentences":["What is this?"],"speaking_prompts":["Ask about objects"]}]'></textarea>
+          <button class="btn btn-success" onclick="importJSONFromPaste()" style="margin-top:8px;">💾 Lưu JSON này</button>
+          <button class="btn btn-outline btn-sm" onclick="document.getElementById('paste-json-area').style.display='none'" style="margin-top:8px;margin-left:8px;">Huỷ</button>
+        </div>
+      </div>
+
+      <!-- SAVED UNITS -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+          <div class="card-title" style="margin:0;">📋 Nội dung đã lưu trong hệ thống</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input class="form-input" id="curr-filter" placeholder="Lọc: gs3, faf2..." style="max-width:180px;padding:7px 11px;font-size:0.85rem;" oninput="filterCurrExtras()">
+            <button class="btn btn-primary btn-sm" onclick="loadCurriculumExtras()" style="white-space:nowrap;">🔄 Tải dữ liệu</button>
+          </div>
+        </div>
+        <div id="curr-extras-list"><div style="text-align:center;padding:20px;color:var(--muted);">Nhấn <b>🔄 Tải dữ liệu</b> để xem nội dung đã lưu</div></div>
+      </div>
+
+    </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ MODAL: ADD STUDENT ═══ -->
+<div class="modal-overlay" id="modal-add-student">
+  <div class="modal">
+    <div class="modal-title" id="modal-student-title">➕ Thêm học sinh mới</div>
+    <input type="hidden" id="edit-student-id">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group"><label class="form-label">Họ và tên *</label><input class="form-input" id="s-fullname" placeholder="Nguyễn Văn An"></div>
+      <div class="form-group"><label class="form-label">Tên đăng nhập *</label><input class="form-input" id="s-username" placeholder="nguyenvanan"></div>
+      <div class="form-group"><label class="form-label">Mật khẩu *</label><input class="form-input" id="s-password" placeholder="Tối thiểu 4 ký tự"></div>
+      <div class="form-group"><label class="form-label">Lớp</label><input class="form-input" id="s-class" placeholder="3A, 4B, Level 2..."></div>
+      <div class="form-group"><label class="form-label">Ngày sinh</label><input class="form-input" id="s-dob" type="date"></div>
+      <div class="form-group"><label class="form-label">Giới tính</label>
+        <select class="form-input" id="s-gender"><option value="male">Nam</option><option value="female">Nữ</option><option value="other">Khác</option></select></div>
+    </div>
+    <div class="form-group"><label class="form-label">Avatar emoji</label>
+      <input class="form-input" id="s-avatar" placeholder="🐱 hoặc 🐶 hoặc 🌟" value="🌟"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-add-student')">Huỷ</button>
+      <button class="btn btn-primary btn-sm" onclick="saveStudent()">💾 Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: STUDENT DETAIL ═══ -->
+<div class="modal-overlay" id="modal-student-detail">
+  <div class="modal" style="max-width:680px;">
+    <div class="student-profile" id="detail-profile"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:16px;" id="detail-stats"></div>
+    <div style="margin-bottom:12px;font-weight:800;font-size:0.9rem;">📋 Lịch sử bài luyện nói</div>
+    <div id="detail-sessions" style="max-height:300px;overflow-y:auto;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-student-detail')">Đóng</button>
+      <button class="btn btn-primary btn-sm" onclick="printStudentReport()">🖨️ In báo cáo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: ADD PICTURE ═══ -->
+<div class="modal-overlay" id="modal-add-picture">
+  <div class="modal">
+    <div class="modal-title">🖼️ Thêm tranh luyện nói</div>
+    <div class="form-group"><label class="form-label">Tiêu đề (tiếng Anh) *</label><input class="form-input" id="pic-title" placeholder="At the Park"></div>
+    <div class="form-group"><label class="form-label">Tiêu đề tiếng Việt</label><input class="form-input" id="pic-title-vi" placeholder="Ở công viên"></div>
+    <div class="form-group"><label class="form-label">Chủ đề</label><input class="form-input" id="pic-topic" placeholder="outdoors, school, family..."></div>
+    <div class="form-group"><label class="form-label">Cấp độ phù hợp</label>
+      <select class="form-input" id="pic-level"><option value="all">Tất cả</option><option value="gs3">GS Lớp 3</option><option value="gs4">GS Lớp 4</option><option value="gs5">GS Lớp 5</option><option value="faf1">F&F Level 1</option><option value="faf2">F&F Level 2</option><option value="faf3">F&F Level 3</option></select></div>
+    <div class="form-group"><label class="form-label">Upload ảnh</label>
+      <div class="upload-area" onclick="document.getElementById('pic-file').click()">
+        <input type="file" id="pic-file" accept="image/*" onchange="previewPic(this)">
+        <div id="pic-preview" style="font-size:2rem;">📷</div>
+        <div style="color:var(--muted);font-size:0.85rem;margin-top:6px;">Nhấn để chọn ảnh</div>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Link ảnh (URL) — thay thế upload</label><input class="form-input" id="pic-url" placeholder="https://..."></div>
+    <div class="form-group"><label class="form-label">Câu hỏi gợi ý (mỗi câu 1 dòng)</label>
+      <textarea class="form-input" id="pic-questions" rows="4" placeholder="What can you see in this picture?&#10;What are the children doing?&#10;What is the weather like?"></textarea></div>
+    <div class="form-group"><label class="form-label">Gợi ý từ vựng (cách nhau bằng dấu phẩy)</label>
+      <input class="form-input" id="pic-vocab" placeholder="tree, children, sunny, playing, park"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-add-picture')">Huỷ</button>
+      <button class="btn btn-primary btn-sm" onclick="savePicture()">💾 Lưu tranh</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPA_URL='https://ybqbweywgkbfidhlcjeh.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlicWJ3ZXl3Z2tiZmlkaGxjamVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4MTU3OTAsImV4cCI6MjA5NjM5MTc5MH0.DD1sJjgbIv82fgLk3SPxpGDg7ENo9jPO0nD63UVKN9g';
+const sb=supabase.createClient(SUPA_URL,SUPA_KEY);
+let adminUser=null, allStudents=[];
+
+function toast(msg,dur=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur);}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+function openModal(id){document.getElementById(id).classList.add('show');}
+
+// ── AUTH ──
+window.onload=()=>{
+  document.getElementById('dash-date').textContent=new Date().toLocaleDateString('vi-VN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const saved=localStorage.getItem('efk_admin');
+  if(saved){adminUser=JSON.parse(saved);showAdmin();}
+};
+document.getElementById('a-pass').addEventListener('keydown',e=>{if(e.key==='Enter')adminLogin();});
+
+async function adminLogin(){
+  const u=document.getElementById('a-user').value.trim();
+  const p=document.getElementById('a-pass').value.trim();
+  try{
+    const{data,error}=await sb.from('admin_users').select('*').eq('username',u).eq('password',p).single();
+    if(error||!data){showAdminErr();return;}
+    adminUser=data;localStorage.setItem('efk_admin',JSON.stringify(data));showAdmin();
+  }catch(e){
+    // Demo mode
+    adminUser={username:u,full_name:'Admin',role:'admin'};
+    localStorage.setItem('efk_admin',JSON.stringify(adminUser));
+    showAdmin();
+  }
+}
+function showAdminErr(){const el=document.getElementById('a-err');el.style.display='block';setTimeout(()=>el.style.display='none',3000);}
+function adminLogout(){if(!confirm('Đăng xuất?'))return;localStorage.removeItem('efk_admin');document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('s-login').classList.add('active');}
+function showAdmin(){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('s-admin').classList.add('active');
+  document.getElementById('nav-user').textContent=adminUser.full_name||adminUser.username;
+  loadDashboard(); loadStudents(); loadCurriculumExtras();
+}
+
+// ── TABS ──
+function switchTab(tabId,el){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  el.classList.add('active');
+  if(tabId==='tab-pictures')loadPictures();
+  if(tabId==='tab-progress')populateProgressSelect();
+  if(tabId==='tab-curriculum')loadCurriculumExtras();
+  if(tabId==='tab-books')loadBooks();
+  if(tabId==='tab-books')loadBooks();
+}
+
+// ── DASHBOARD ──
+async function loadDashboard(){
+  try{
+    const[{count:sc},{count:tc},{data:avgData},{data:recentData}]=await Promise.all([
+      sb.from('students').select('*',{count:'exact',head:true}).eq('is_active',true),
+      sb.from('speaking_sessions').select('*',{count:'exact',head:true}).gte('created_at',new Date().toISOString().slice(0,10)),
+      sb.from('speaking_sessions').select('score_total').gte('created_at',new Date(Date.now()-7*86400000).toISOString()),
+      sb.from('speaking_sessions').select('*, students(full_name,avatar_emoji)').order('created_at',{ascending:false}).limit(5)
+    ]);
+    document.getElementById('d-total-students').textContent=sc||0;
+    document.getElementById('d-sessions-today').textContent=tc||0;
+    if(avgData&&avgData.length){
+      const avg=avgData.reduce((s,r)=>s+(r.score_total||0),0)/avgData.length;
+      document.getElementById('d-avg-score').textContent=avg.toFixed(1);
+    }
+    const{count:total}=await sb.from('speaking_sessions').select('*',{count:'exact',head:true});
+    document.getElementById('d-total-sessions').textContent=total||0;
+    if(recentData&&recentData.length){
+      document.getElementById('recent-activity').innerHTML=recentData.map(s=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+          <div style="font-size:1.4rem;">${s.students?.avatar_emoji||'🌟'}</div>
+          <div style="flex:1;"><div style="font-size:0.85rem;font-weight:700;">${s.students?.full_name||'—'}</div>
+          <div style="font-size:0.75rem;color:var(--muted);">${s.unit_topic} · ${new Date(s.created_at).toLocaleDateString('vi-VN')}</div></div>
+          <div style="font-family:'Baloo 2',cursive;font-weight:800;color:${s.score_total>=8?'var(--green2)':s.score_total>=6?'var(--orange2)':'var(--red)'};">${s.score_total||'—'}</div>
+        </div>`).join('');
+    }
+  }catch(e){}
+}
+
+// ── STUDENTS ──
+async function loadStudents(){
+  try{
+    const{data}=await sb.from('students').select(`*, speaking_sessions(score_total,completed)`).order('created_at',{ascending:false});
+    if(!data){renderStudentsEmpty();return;}
+    allStudents=data;
+    renderStudentsTable(data);
+  }catch(e){renderStudentsEmpty();}
+}
+function renderStudentsEmpty(){document.getElementById('students-tbody').innerHTML='<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--muted);">Chưa có học sinh. Thêm học sinh đầu tiên!</td></tr>';}
+function renderStudentsTable(students){
+  const tbody=document.getElementById('students-tbody');
+  if(!students.length){renderStudentsEmpty();return;}
+  tbody.innerHTML=students.map(s=>{
+    const sessions=s.speaking_sessions||[];
+    const completed=sessions.filter(ss=>ss.completed);
+    const avg=completed.length?( completed.reduce((a,b)=>a+(b.score_total||0),0)/completed.length).toFixed(1):'—';
+    const joined=new Date(s.created_at).toLocaleDateString('vi-VN');
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:8px;">
+        <div style="font-size:1.4rem;">${s.avatar_emoji||'👤'}</div>
+        <div><div style="font-weight:700;">${s.full_name||s.username}</div><div style="font-size:0.75rem;color:var(--muted);">${s.birth_date?calcAge(s.birth_date)+' tuổi':'—'}</div></div></div></td>
+      <td><span class="badge badge-blue">${s.username}</span></td>
+      <td>${s.class_name||'—'}</td>
+      <td>${joined}</td>
+      <td><span class="badge badge-orange">${completed.length} bài</span></td>
+      <td><span class="badge ${avg==='—'?'badge-blue':parseFloat(avg)>=8?'badge-green':parseFloat(avg)>=6?'badge-orange':'badge-red'}">${avg}</span></td>
+      <td><span class="badge ${s.is_active?'badge-green':'badge-red'}">${s.is_active?'Đang học':'Ngừng'}</span></td>
+      <td><div style="display:flex;gap:6px;">
+        <button class="btn btn-primary btn-sm" onclick="viewStudentDetail('${s.id}')">📊 Chi tiết</button>
+        <button class="btn btn-outline btn-sm" onclick="editStudent('${s.id}')">✏️</button>
+        <button class="btn btn-sm" style="background:var(--red);color:#fff;" onclick="toggleStudentActive('${s.id}',${s.is_active})">${s.is_active?'🚫':'✅'}</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+function filterStudents(){
+  const q=document.getElementById('student-search').value.toLowerCase();
+  renderStudentsTable(allStudents.filter(s=>(s.full_name||'').toLowerCase().includes(q)||(s.username||'').toLowerCase().includes(q)||(s.class_name||'').toLowerCase().includes(q)));
+}
+function calcAge(dob){return Math.floor((Date.now()-new Date(dob))/31557600000);}
+
+function openAddStudent(){
+  document.getElementById('modal-student-title').textContent='➕ Thêm học sinh mới';
+  document.getElementById('edit-student-id').value='';
+  ['s-fullname','s-username','s-password','s-class'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('s-avatar').value='🌟';
+  document.getElementById('s-dob').value='';
+  openModal('modal-add-student');
+}
+function editStudent(id){
+  const s=allStudents.find(x=>x.id===id);if(!s)return;
+  document.getElementById('modal-student-title').textContent='✏️ Chỉnh sửa học sinh';
+  document.getElementById('edit-student-id').value=id;
+  document.getElementById('s-fullname').value=s.full_name||'';
+  document.getElementById('s-username').value=s.username||'';
+  document.getElementById('s-password').value=s.password||'';
+  document.getElementById('s-class').value=s.class_name||'';
+  document.getElementById('s-avatar').value=s.avatar_emoji||'🌟';
+  document.getElementById('s-dob').value=s.birth_date||'';
+  document.getElementById('s-gender').value=s.gender||'male';
+  openModal('modal-add-student');
+}
+async function saveStudent(){
+  const id=document.getElementById('edit-student-id').value;
+  const data={full_name:document.getElementById('s-fullname').value.trim(),username:document.getElementById('s-username').value.trim(),password:document.getElementById('s-password').value.trim(),class_name:document.getElementById('s-class').value.trim(),avatar_emoji:document.getElementById('s-avatar').value.trim(),birth_date:document.getElementById('s-dob').value||null,gender:document.getElementById('s-gender').value};
+  if(!data.full_name||!data.username||!data.password){toast('⚠️ Nhập đủ họ tên, username và mật khẩu!');return;}
+  try{
+    if(id){await sb.from('students').update(data).eq('id',id);}
+    else{await sb.from('students').insert(data);}
+    closeModal('modal-add-student');loadStudents();toast('✅ Đã lưu thông tin học sinh!');
+  }catch(e){toast('⚠️ Lỗi: username có thể đã tồn tại!');}
+}
+async function toggleStudentActive(id,active){
+  if(!confirm(active?'Ngừng hoạt động tài khoản này?':'Kích hoạt lại tài khoản này?'))return;
+  await sb.from('students').update({is_active:!active}).eq('id',id);
+  loadStudents();toast(active?'🚫 Đã ngừng tài khoản':'✅ Đã kích hoạt lại');
+}
+
+// ── STUDENT DETAIL ──
+async function viewStudentDetail(id){
+  const s=allStudents.find(x=>x.id===id);if(!s)return;
+  const{data:sessions}=await sb.from('speaking_sessions').select('*').eq('student_id',id).eq('completed',true).order('created_at',{ascending:false});
+  const completed=sessions||[];
+  const avg=completed.length?(completed.reduce((a,b)=>a+(b.score_total||0),0)/completed.length).toFixed(1):'—';
+  const best=completed.length?Math.max(...completed.map(s=>s.score_total||0)):0;
+  document.getElementById('detail-profile').innerHTML=`
+    <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#E3F2FD,#BBDEFB);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;">${s.avatar_url?`<img src="${s.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`:s.avatar_emoji||'👤'}</div>
+    <div><div style="font-family:'Baloo 2',cursive;font-size:1.3rem;font-weight:800;">${s.full_name||s.username}</div>
+    <div style="color:var(--muted);font-size:0.85rem;">${s.class_name?'Lớp '+s.class_name:''} ${s.birth_date?'· '+calcAge(s.birth_date)+' tuổi':''}</div>
+    <div style="font-size:0.8rem;color:var(--muted);">@${s.username}</div></div>`;
+  document.getElementById('detail-stats').innerHTML=`
+    <div class="score-mini-item"><div class="score-mini-lbl">Bài đã luyện</div><div class="score-mini-val" style="color:var(--blue2);">${completed.length}</div></div>
+    <div class="score-mini-item"><div class="score-mini-lbl">Điểm TB</div><div class="score-mini-val" style="color:var(--green2);">${avg}</div></div>
+    <div class="score-mini-item"><div class="score-mini-lbl">Điểm cao nhất</div><div class="score-mini-val" style="color:var(--orange2);">${best||'—'}</div></div>
+    <div class="score-mini-item"><div class="score-mini-lbl">Tham gia</div><div class="score-mini-val" style="font-size:0.9rem;color:var(--muted);">${new Date(s.created_at).toLocaleDateString('vi-VN')}</div></div>`;
+  const sessEl=document.getElementById('detail-sessions');
+  if(!completed.length){sessEl.innerHTML='<div class="empty-state"><span class="empty-icon">🎤</span><div>Chưa có bài luyện nào</div></div>';openModal('modal-student-detail');return;}
+  sessEl.innerHTML=completed.map(ss=>{
+    const d=new Date(ss.created_at);
+    const scoreColor=ss.score_total>=8?'var(--green2)':ss.score_total>=6?'var(--orange2)':'var(--red)';
+    return `<div class="session-row">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <div style="flex:1;"><div style="font-weight:700;font-size:0.88rem;">${ss.level_label} · ${ss.unit_topic}</div>
+        <div style="font-size:0.75rem;color:var(--muted);">${d.toLocaleDateString('vi-VN')} ${d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})} · ${ss.mode==='picture'?'🖼️ Tranh':'💬 Hội thoại'} · ${ss.turn_count||0} lượt</div></div>
+        <div style="font-family:'Baloo 2',cursive;font-size:1.4rem;font-weight:800;color:${scoreColor};">${ss.score_total||'—'}</div>
+      </div>
+      ${ss.ai_comment_vi?`<div style="font-size:0.8rem;color:var(--muted);margin-top:6px;font-style:italic;">💬 ${ss.ai_comment_vi}</div>`:''}
+      ${ss.teacher_note?`<div style="font-size:0.8rem;color:var(--blue);margin-top:4px;">✏️ GV: ${ss.teacher_note}</div>`:''}
+      <div style="display:flex;gap:6px;margin-top:6px;">
+        ${[['Fluency',ss.score_fluency,'#2196F3'],['Vocab',ss.score_vocab,'#43A047'],['Grammar',ss.score_grammar,'#FB8C00'],['Confidence',ss.score_confidence,'#9C27B0']].map(([l,v,c])=>`<div style="flex:1;text-align:center;"><div style="font-size:0.65rem;color:var(--muted);">${l}</div><div class="progress-bar" style="margin:3px 0;"><div class="progress-fill" style="width:${(v||0)*10}%;background:${c};"></div></div><div style="font-size:0.75rem;font-weight:700;color:${c};">${v||'—'}</div></div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  openModal('modal-student-detail');
+}
+function printStudentReport(){window.print();}
+
+// ── PROGRESS TAB ──
+async function populateProgressSelect(){
+  const sel=document.getElementById('progress-student-select');
+  sel.innerHTML='<option value="">— Chọn học sinh —</option>';
+  allStudents.forEach(s=>{sel.innerHTML+=`<option value="${s.id}">${s.full_name||s.username} (${s.class_name||'—'})</option>`;});
+}
+async function loadStudentProgress(){
+  const id=document.getElementById('progress-student-select').value;
+  if(!id)return;
+  const s=allStudents.find(x=>x.id===id);
+  const{data:sessions}=await sb.from('speaking_sessions').select('*').eq('student_id',id).eq('completed',true).order('created_at',{ascending:true});
+  const el=document.getElementById('progress-content');
+  if(!sessions||!sessions.length){el.innerHTML='<div class="empty-state"><span class="empty-icon">🎤</span><div>Học sinh này chưa có bài luyện nào</div></div>';return;}
+  const scores=sessions.map(s=>s.score_total||0);
+  const maxScore=Math.max(...scores);
+  const avg=(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1);
+  const trend=scores.length>1?scores[scores.length-1]-scores[0]:0;
+  el.innerHTML=`
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+        <div style="font-size:2rem;">${s.avatar_emoji||'👤'}</div>
+        <div><div style="font-family:'Baloo 2',cursive;font-size:1.2rem;font-weight:800;">${s.full_name||s.username}</div>
+        <div style="color:var(--muted);font-size:0.85rem;">Lớp ${s.class_name||'—'}</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
+        <div class="stat-card" style="border-color:#2196F3;padding:12px;"><div class="stat-num" style="color:#2196F3;font-size:1.5rem;">${sessions.length}</div><div class="stat-lbl">Bài đã luyện</div></div>
+        <div class="stat-card" style="border-color:#43A047;padding:12px;"><div class="stat-num" style="color:#43A047;font-size:1.5rem;">${avg}</div><div class="stat-lbl">Điểm TB</div></div>
+        <div class="stat-card" style="border-color:#FB8C00;padding:12px;"><div class="stat-num" style="color:#FB8C00;font-size:1.5rem;">${maxScore}</div><div class="stat-lbl">Điểm cao nhất</div></div>
+        <div class="stat-card" style="border-color:${trend>=0?'#43A047':'#E53935'};padding:12px;"><div class="stat-num" style="color:${trend>=0?'#43A047':'#E53935'};font-size:1.5rem;">${trend>=0?'📈':'📉'}</div><div class="stat-lbl">${trend>=0?'Tiến bộ':trend<0?'Cần cố gắng':'Ổn định'}</div></div>
+      </div>
+      <div class="card-title">📊 Biểu đồ điểm theo thời gian</div>
+      <div style="display:flex;align-items:flex-end;gap:6px;height:80px;margin-bottom:6px;">
+        ${scores.map((sc,i)=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
+          <div style="font-size:0.65rem;color:var(--muted);">${sc}</div>
+          <div style="width:100%;border-radius:4px 4px 0 0;background:${sc>=8?'#43A047':sc>=6?'#FB8C00':'#E53935'};height:${Math.max(8,(sc/10)*60)}px;"></div>
+        </div>`).join('')}
+      </div>
+      <div style="font-size:0.72rem;color:var(--muted);text-align:center;">Bài 1 → Bài ${scores.length} (theo thứ tự thời gian)</div>
+    </div>
+    <div class="card" style="margin-top:0;">
+      <div class="card-title">📋 Chi tiết từng bài</div>
+      ${sessions.slice().reverse().map(ss=>`<div class="session-row">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div><div style="font-weight:700;font-size:0.88rem;">${ss.level_label} · ${ss.unit_topic}</div>
+          <div style="font-size:0.75rem;color:var(--muted);">${new Date(ss.created_at).toLocaleDateString('vi-VN')} · ${ss.mode==='picture'?'🖼️':'💬'} · ${ss.turn_count} lượt nói</div></div>
+          <div style="font-family:'Baloo 2',cursive;font-size:1.3rem;font-weight:800;color:${ss.score_total>=8?'#43A047':ss.score_total>=6?'#FB8C00':'#E53935'};">${ss.score_total||'—'}</div>
+        </div>
+        ${ss.ai_comment_vi?`<div style="font-size:0.82rem;color:var(--muted);margin-top:5px;font-style:italic;">💬 ${ss.ai_comment_vi}</div>`:''}
+      </div>`).join('')}
+    </div>`;
+}
+
+// ── PICTURES ──
+async function loadPictures(){
+  const grid=document.getElementById('pictures-grid');
+  grid.innerHTML='<div style="color:var(--muted);padding:20px;grid-column:1/-1;text-align:center;">Đang tải...</div>';
+  try{
+    const{data}=await sb.from('picture_cards').select('*').order('created_at',{ascending:false});
+    if(!data||!data.length){grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;"><span class="empty-icon">🖼️</span><div>Chưa có tranh nào. Thêm tranh để học sinh luyện nói!</div></div>';return;}
+    grid.innerHTML=data.map(p=>`
+      <div style="background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);">
+        ${p.image_url?`<img src="${p.image_url}" style="width:100%;height:110px;object-fit:cover;" onerror="this.style.display='none'">`:
+        `<div style="height:110px;background:linear-gradient(135deg,#E3F2FD,#E8F5E9);display:flex;align-items:center;justify-content:center;font-size:2.5rem;">🖼️</div>`}
+        <div style="padding:10px;">
+          <div style="font-weight:700;font-size:0.88rem;">${p.title}</div>
+          <div style="font-size:0.75rem;color:var(--muted);">${p.title_vi||''} · ${p.topic||''}</div>
+          <div style="margin-top:6px;display:flex;gap:6px;">
+            <span class="badge badge-blue">${p.level||'all'}</span>
+            <button class="btn btn-sm" style="background:var(--red);color:#fff;padding:3px 8px;font-size:0.72rem;" onclick="deletePicture('${p.id}')">🗑️</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }catch(e){grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;"><span class="empty-icon">⚠️</span><div>Lỗi tải tranh</div></div>';}
+}
+function previewPic(input){
+  if(input.files&&input.files[0]){
+    const r=new FileReader();r.onload=e=>{document.getElementById('pic-preview').innerHTML=`<img src="${e.target.result}" style="max-height:100px;border-radius:8px;">`;};r.readAsDataURL(input.files[0]);
+  }
+}
+function openAddPicture(){document.getElementById('pic-file').value='';document.getElementById('pic-preview').innerHTML='📷';['pic-title','pic-title-vi','pic-topic','pic-url','pic-questions','pic-vocab'].forEach(id=>document.getElementById(id).value='');document.getElementById('pic-level').value='all';openModal('modal-add-picture');}
+async function savePicture(){
+  const title=document.getElementById('pic-title').value.trim();
+  if(!title){toast('⚠️ Nhập tiêu đề tranh!');return;}
+  const file=document.getElementById('pic-file').files[0];
+  let imageUrl=document.getElementById('pic-url').value.trim();
+  if(file&&!imageUrl){
+    try{
+      const fname=`pics/${Date.now()}_${file.name.replace(/\s/g,'_')}`;
+      const{data:up}=await sb.storage.from('picture-cards').upload(fname,file,{upsert:true});
+      if(up){const{data:url}=sb.storage.from('picture-cards').getPublicUrl(fname);imageUrl=url.publicUrl;}
+    }catch(e){toast('⚠️ Lỗi upload ảnh, dùng URL thay thế');}
+  }
+  const qs=document.getElementById('pic-questions').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const vs=document.getElementById('pic-vocab').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const rec={title,title_vi:document.getElementById('pic-title-vi').value.trim(),topic:document.getElementById('pic-topic').value.trim(),level:document.getElementById('pic-level').value,image_url:imageUrl||null,guiding_questions:qs,vocab_hints:vs,is_active:true};
+  try{await sb.from('picture_cards').insert(rec);closeModal('modal-add-picture');loadPictures();toast('✅ Đã thêm tranh!');}
+  catch(e){toast('⚠️ Lỗi lưu tranh!');}
+}
+async function deletePicture(id){
+  if(!confirm('Xoá tranh này?'))return;
+  await sb.from('picture_cards').delete().eq('id',id);loadPictures();toast('🗑️ Đã xoá tranh');
+}
+
+// ── CURRICULUM ──
+let allExtras = [];
+
+async function loadCurriculumExtras(){
+  const el = document.getElementById('curr-extras-list');
+  if(el) el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);">⏳ Đang tải...</div>';
+  try{
+    const{data, error}=await sb.from('curriculum_extras').select('*').order('book').order('level_id').order('unit_number');
+    if(error) throw error;
+    allExtras = data || [];
+    renderExtras(allExtras);
+  }catch(e){
+    console.error('loadCurriculumExtras error:', e);
+    if(el) el.innerHTML='<div style="color:var(--red);text-align:center;padding:20px;">❌ Lỗi tải: '+e.message+'</div>';
+  }
+}
+
+function filterCurrExtras(){
+  const q = document.getElementById('curr-filter').value.toLowerCase();
+  renderExtras(allExtras.filter(d => (d.book+d.level_id+d.unit_number).toLowerCase().includes(q)));
+}
+
+function renderExtras(data){
+  const el = document.getElementById('curr-extras-list');
+  if(!data||!data.length){
+    el.innerHTML=`<div style="text-align:center;padding:30px;">
+      <div style="font-size:2rem;margin-bottom:8px;">📭</div>
+      <div style="color:var(--muted);margin-bottom:12px;">Chưa có nội dung. Import JSON hoặc thêm unit mới!</div>
+      <button class="btn btn-primary btn-sm" onclick="openAddUnit()">+ Thêm unit mới</button>
+    </div>`;
+    return;
+  }
+  const groups = {};
+  data.forEach(d => {
+    const key = d.book + '_' + d.level_id;
+    if(!groups[key]) groups[key] = {book:d.book, level:d.level_id, units:[]};
+    groups[key].units.push(d);
+  });
+  // Sort units numerically
+  Object.values(groups).forEach(g => {
+    g.units.sort((a,b) => {
+      const na = isNaN(a.unit_number) ? a.unit_number : parseInt(a.unit_number);
+      const nb = isNaN(b.unit_number) ? b.unit_number : parseInt(b.unit_number);
+      if(a.unit_number==='Starter') return -1;
+      if(b.unit_number==='Starter') return 1;
+      return na > nb ? 1 : -1;
+    });
+  });
+  const bookNames = {gs:'Global Success', faf:'Family & Friends', topics:'Chủ đề tự do'};
+  const bookColors = {gs:'#1565C0', faf:'#2E7D32', topics:'#E65100'};
+  el.innerHTML = `
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+      <button class="btn btn-primary btn-sm" onclick="openAddUnit()">+ Thêm unit mới</button>
+    </div>` +
+  Object.values(groups).map(g => `
+    <div style="margin-bottom:20px;">
+      <div style="font-weight:800;font-size:0.9rem;color:white;margin-bottom:10px;padding:8px 14px;background:${bookColors[g.book]||'#1565C0'};border-radius:8px;display:flex;align-items:center;justify-content:space-between;">
+        <span>📚 ${bookNames[g.book]||g.book} — ${g.level}</span>
+        <span style="font-size:0.75rem;opacity:0.85;font-weight:400;">${g.units.length} unit</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;">
+        ${g.units.map(u => `
+          <div style="background:white;border-radius:10px;padding:12px 14px;box-shadow:0 1px 6px rgba(0,0,0,0.07);border:1px solid var(--border);transition:box-shadow 0.15s;" onmouseover="this.style.boxShadow='0 4px 14px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow='0 1px 6px rgba(0,0,0,0.07)'">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <div style="font-family:'Baloo 2',cursive;font-weight:800;font-size:1rem;color:${bookColors[g.book]||'#1565C0'};">Unit ${u.unit_number}</div>
+              <div style="display:flex;gap:4px;">
+                <button title="Xem chi tiết" style="background:#E3F2FD;border:none;border-radius:6px;padding:4px 7px;cursor:pointer;font-size:0.8rem;" data-id="${u.id}" data-action="view" onclick="unitAction(this)">👁️</button>
+                <button title="Sửa" style="background:#E8F5E9;border:none;border-radius:6px;padding:4px 7px;cursor:pointer;font-size:0.8rem;" data-id="${u.id}" data-action="edit" onclick="unitAction(this)">✏️</button>
+                <button title="Xoá" style="background:#FFEBEE;border:none;border-radius:6px;padding:4px 7px;cursor:pointer;font-size:0.8rem;" data-id="${u.id}" data-action="del" onclick="unitAction(this)">🗑️</button>
+              </div>
+            </div>
+            <div style="font-size:0.75rem;color:var(--muted);margin-bottom:4px;">
+              📝 ${Array.isArray(u.vocab_list)?u.vocab_list.length:0} từ vựng &nbsp;·&nbsp; 💬 ${Array.isArray(u.sample_sentences)?u.sample_sentences.length:0} mẫu câu
+            </div>
+            <div style="font-size:0.72rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              ${Array.isArray(u.vocab_list)&&u.vocab_list.length?u.vocab_list.slice(0,4).join(', ')+'...':'—'}
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function editExtra(id){
+  const d = allExtras.find(x=>x.id===id); if(!d) return;
+  const bookNames = {gs:'Global Success', faf:'Family & Friends', mamnon:'Mầm non', topics:'Chủ đề'};
+  document.getElementById('modal-unit-title').textContent = '✏️ Sửa — '+(bookNames[d.book]||d.book)+' '+d.level_id+' — '+d.unit_number;
+  document.getElementById('edit-extra-id').value = id;
+  document.getElementById('curr-book').value = d.book;
+  document.getElementById('curr-level').value = d.level_id;
+  document.getElementById('curr-unit').value = d.unit_number;
+  document.getElementById('curr-vocab').value = Array.isArray(d.vocab_list)?d.vocab_list.join(', '):'';
+  document.getElementById('curr-sentences').value = Array.isArray(d.sample_sentences)?d.sample_sentences.join('\n'):'';
+  document.getElementById('curr-prompts').value = Array.isArray(d.speaking_prompts)?d.speaking_prompts.join('\n'):'';
+  updateUnitLabel();
+  openModal('modal-unit-edit');
+}
+// ── BULK EXTRACT (whole book) ──
+async function bulkExtract(){
+  const raw = document.getElementById('bulk-raw-input').value.trim();
+  const book = document.getElementById('bulk-book').value;
+  const level = document.getElementById('bulk-level').value.trim();
+  if(!raw){toast('⚠️ Paste nội dung sách vào trước!');return;}
+  if(!level){toast('⚠️ Nhập Level trước! Ví dụ: gs3');return;}
+
+  const btn = document.getElementById('bulk-extract-btn');
+  btn.disabled = true; btn.textContent = '⏳ Đang xử lý...';
+  const statusEl = document.getElementById('bulk-status');
+  const progressWrap = document.getElementById('bulk-progress-wrap');
+  const progressBar = document.getElementById('bulk-progress-bar');
+  const progressLabel = document.getElementById('bulk-progress-label');
+  statusEl.style.display = 'block';
+  statusEl.style.background = '#E3F2FD';
+  statusEl.innerHTML = '🤖 AI đang đọc và phân tích nội dung...';
+  progressWrap.style.display = 'block';
+  progressBar.style.width = '10%';
+  progressLabel.textContent = 'Đang gửi cho AI phân tích...';
+
+  try{
+    const prompt = `You are an English curriculum expert. Extract ALL units from this textbook content and return ONLY valid JSON (no markdown, no extra text).
+
+Book: ${book}, Level: ${level}
+Content:
+${raw}
+
+Return this exact JSON structure:
+[
+  {
+    "unit_number": "1",
+    "vocab_list": ["pen", "rubber", "pencil", "ruler"],
+    "sample_sentences": ["What's this?", "It's a pen.", "Open the book."],
+    "speaking_prompts": ["Ask about classroom objects using What's this?", "Practice open/close commands"]
+  }
+]
+
+Rules:
+- Extract every unit mentioned
+- vocab_list: only the English words/phrases (no Vietnamese, no parentheses)
+- sample_sentences: complete English sentences/questions from the unit
+- speaking_prompts: 2-3 short instructions for Sunny AI on how to practice this unit
+- unit_number: just the number or "Starter" etc.
+- Return ONLY the JSON array, nothing else`;
+
+    progressBar.style.width = '40%';
+    progressLabel.textContent = 'AI đang phân tích từng unit...';
+
+    const userKey = document.getElementById('user-api-key').value.trim();
+    if(!userKey){toast('⚠️ Nhập API key vào ô bên dưới trước!');btn.disabled=false;btn.textContent='✨ Phân tích tự động';return;}
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:8000,
+        messages:[{role:'user', content:prompt}]
+      })
+    });
+    const data = await res.json();
+    const rawJson = data.content?.map(c=>c.text||'').join('') || '';
+    progressBar.style.width = '65%';
+    progressLabel.textContent = 'Đang lưu vào hệ thống...';
+
+    // Parse JSON
+    const clean = rawJson.replace(/```json|```/g,'').trim();
+    const units = JSON.parse(clean);
+
+    if(!Array.isArray(units)||!units.length){
+      throw new Error('AI không nhận diện được unit. Thử paste lại với format rõ hơn.');
+    }
+
+    // Save all units to Supabase
+    let saved = 0, failed = 0;
+    for(const u of units){
+      try{
+        await sb.from('curriculum_extras').upsert({
+          book, level_id:level,
+          unit_number: String(u.unit_number),
+          vocab_list: u.vocab_list || [],
+          sample_sentences: u.sample_sentences || [],
+          speaking_prompts: u.speaking_prompts || [],
+          updated_at: new Date().toISOString()
+        },{onConflict:'book,level_id,unit_number'});
+        saved++;
+        progressBar.style.width = Math.min(95, 65 + (saved/units.length)*30) + '%';
+        progressLabel.textContent = `Đã lưu ${saved}/${units.length} unit...`;
+      }catch(e){ failed++; }
+    }
+
+    progressBar.style.width = '100%';
+    progressBar.style.background = '#43A047';
+    statusEl.style.background = '#E8F5E9';
+    statusEl.innerHTML = `✅ Xong! Đã lưu <b>${saved} unit</b> cho ${book.toUpperCase()} ${level}${failed?` (${failed} lỗi)`:''}. <br><span style="font-size:0.82rem;color:var(--muted);">Cuộn xuống để xem danh sách đã lưu.</span>`;
+    progressLabel.textContent = `Hoàn tất! ${saved}/${units.length} unit đã lưu.`;
+    loadCurriculumExtras();
+    document.getElementById('bulk-raw-input').value = '';
+  }catch(e){
+    statusEl.style.background = '#FFEBEE';
+    statusEl.innerHTML = '❌ Lỗi: ' + (e.message||'Không xác định') + '<br><span style="font-size:0.82rem;">Thử paste lại với format rõ hơn hoặc chia nhỏ nội dung.</span>';
+    progressBar.style.background = 'var(--red)';
+  }
+  btn.disabled = false; btn.textContent = '✨ Phân tích & Lưu toàn bộ';
+}
+
+// ── SINGLE UNIT EXTRACT ──
+async function singleExtractAndSave(){
+  const raw = document.getElementById('single-raw-input').value.trim();
+  const book = document.getElementById('curr-book').value;
+  const level = document.getElementById('curr-level').value.trim();
+  const unit = document.getElementById('curr-unit').value.trim();
+  if(!raw&&!document.getElementById('curr-vocab').value.trim()){toast('⚠️ Paste nội dung hoặc nhập từ vựng!');return;}
+  if(!level||!unit){toast('⚠️ Nhập Level và Unit!');return;}
+  if(!raw){ saveCurriculumExtra(); return; }
+
+  toast('⏳ AI đang trích xuất...');
+  try{
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:2000,
+        messages:[{role:'user', content:`Extract from this English lesson content. Return ONLY JSON, no markdown:
+{"vocab_list":["word1","word2"],"sample_sentences":["Sentence 1.","Sentence 2."],"speaking_prompts":["prompt1","prompt2"]}
+Content: ${raw}`}]
+      })
+    });
+    const data = await res.json();
+    const raw2 = data.content?.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(raw2);
+    document.getElementById('curr-vocab').value = (parsed.vocab_list||[]).join(', ');
+    document.getElementById('curr-sentences').value = (parsed.sample_sentences||[]).join('\n');
+    document.getElementById('curr-prompts').value = (parsed.speaking_prompts||[]).join('\n');
+    saveCurriculumExtra();
+  }catch(e){ toast('⚠️ Lỗi AI, thử lưu thủ công!'); }
+}
+
+async function saveCurriculumExtra(){
+  const book=document.getElementById('curr-book').value;
+  const level=document.getElementById('curr-level').value.trim();
+  const unit=document.getElementById('curr-unit').value.trim();
+  if(!level||!unit){toast('⚠️ Nhập level và unit!');return;}
+  const vocab=document.getElementById('curr-vocab').value.split(/[,\n]/).map(s=>s.trim()).filter(Boolean);
+  const sentences=document.getElementById('curr-sentences').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const prompts=document.getElementById('curr-prompts').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  try{
+    await sb.from('curriculum_extras').upsert(
+      {book,level_id:level,unit_number:unit,vocab_list:vocab,sample_sentences:sentences,speaking_prompts:prompts,wordwall_links:currentWWLinks,vocab_images:currentVocabImages,updated_at:new Date().toISOString()},
+      {onConflict:'book,level_id,unit_number'}
+    );
+    closeModal('modal-unit-edit');
+    loadCurriculumExtras(); toast('✅ Đã lưu!');
+  }catch(e){toast('⚠️ Lỗi: '+e.message);}
+}
+
+async function deleteCurriculumExtra(id){
+  if(!confirm('Xoá nội dung unit này?'))return;
+  await sb.from('curriculum_extras').delete().eq('id',id);
+  loadCurriculumExtras(); toast('🗑️ Đã xoá');
+}
+
+// ── JSON IMPORT ──
+async function importJSON(input){
+  const file = input.files[0]; if(!file) return;
+  const book = document.getElementById('bulk-book').value;
+  const level = document.getElementById('bulk-level').value.trim();
+  if(!level){toast('⚠️ Nhập Level trước! Ví dụ: faf1');return;}
+  const text = await file.text();
+  await processJSONImport(text, book, level);
+}
+
+function pasteJSONDirect(){
+  document.getElementById('paste-json-area').style.display = 'block';
+  document.getElementById('paste-json-area').scrollIntoView({behavior:'smooth'});
+}
+
+async function importJSONFromPaste(){
+  const text = document.getElementById('json-paste-input').value.trim();
+  const book = document.getElementById('bulk-book').value;
+  const level = document.getElementById('bulk-level').value.trim();
+  if(!text){toast('⚠️ Paste JSON vào trước!');return;}
+  if(!level){toast('⚠️ Nhập Level trước!');return;}
+  await processJSONImport(text, book, level);
+}
+
+async function processJSONImport(jsonText, book, level){
+  const statusEl = document.getElementById('bulk-status');
+  const progressWrap = document.getElementById('bulk-progress-wrap');
+  const progressBar = document.getElementById('bulk-progress-bar');
+  const progressLabel = document.getElementById('bulk-progress-label');
+  statusEl.style.display='block'; statusEl.style.background='#E3F2FD';
+  statusEl.innerHTML='⏳ Đang nhập dữ liệu...';
+  progressWrap.style.display='block'; progressBar.style.width='10%';
+  try{
+    const clean = jsonText.replace(/```json|```/g,'').trim();
+    const units = JSON.parse(clean);
+    if(!Array.isArray(units)||!units.length) throw new Error('JSON không đúng format. Cần là một mảng []');
+    let saved=0, failed=0;
+    for(const u of units){
+      try{
+        await sb.from('curriculum_extras').upsert({
+          book, level_id:level,
+          unit_number: String(u.unit_number),
+          vocab_list: u.vocab_list||[],
+          sample_sentences: u.sample_sentences||[],
+          speaking_prompts: u.speaking_prompts||[],
+          updated_at: new Date().toISOString()
+        },{onConflict:'book,level_id,unit_number'});
+        saved++;
+        progressBar.style.width = Math.min(95, 10+(saved/units.length)*85)+'%';
+        progressLabel.textContent = `Đã lưu ${saved}/${units.length} unit...`;
+      }catch(e){ failed++; }
+    }
+    progressBar.style.width='100%'; progressBar.style.background='#43A047';
+    statusEl.style.background='#E8F5E9';
+    statusEl.innerHTML=`✅ Nhập xong! Đã lưu <b>${saved} unit</b> cho ${book.toUpperCase()} ${level}${failed?` (${failed} lỗi)`:''}`;
+    progressLabel.textContent=`Hoàn tất! ${saved}/${units.length} unit đã lưu.`;
+    loadCurriculumExtras();
+    document.getElementById('paste-json-area').style.display='none';
+    document.getElementById('json-paste-input').value='';
+  }catch(e){
+    statusEl.style.background='#FFEBEE';
+    statusEl.innerHTML='❌ Lỗi: '+(e.message||'JSON không hợp lệ');
+    progressBar.style.background='var(--red)';
+  }
+}
+
+// ── SINGLE EXTRACT (for modal) ──
+async function singleExtractOnly(){
+  const raw = document.getElementById('single-raw-input').value.trim();
+  const apiKey = document.getElementById('user-api-key')?.value?.trim();
+  if(!raw){toast('⚠️ Paste nội dung trước!');return;}
+  if(!apiKey){toast('⚠️ Cần API key ở phần Cách 2!');return;}
+  toast('⏳ AI đang trích xuất...');
+  try{
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,
+        messages:[{role:'user',content:`Extract from this English lesson. Return ONLY JSON no markdown:
+{"vocab_list":["word1","word2"],"sample_sentences":["S1.","S2."],"speaking_prompts":["p1","p2"]}
+Content: ${raw}`}]})
+    });
+    const data = await res.json();
+    const parsed = JSON.parse(data.content?.map(c=>c.text||'').join('').replace(/\`\`\`json|\`\`\`/g,'').trim());
+    document.getElementById('curr-vocab').value = (parsed.vocab_list||[]).join(', ');
+    document.getElementById('curr-sentences').value = (parsed.sample_sentences||[]).join('\n');
+    document.getElementById('curr-prompts').value = (parsed.speaking_prompts||[]).join('\n');
+    toast('✅ Đã trích xuất! Kiểm tra rồi nhấn Lưu.');
+  }catch(e){toast('⚠️ Lỗi: '+e.message);}
+}
+
+
+
+
+// ── VOCAB IMAGES ──
+let currentVocabImages = {}; // {word: url}
+
+function refreshVocabImages() {
+  const vocab = document.getElementById('curr-vocab').value
+    .split(',').map(s=>s.trim()).filter(Boolean);
+  const list = document.getElementById('vocab-img-list');
+  if (!list || !vocab.length) return;
+  list.innerHTML = vocab.map(word => {
+    const existing = currentVocabImages[word.toLowerCase()] || '';
+    return `<div style="text-align:center;width:80px;">
+      <div style="width:70px;height:70px;border-radius:10px;overflow:hidden;border:2px solid var(--border);cursor:pointer;background:var(--bg);display:flex;align-items:center;justify-content:center;margin:0 auto;"
+        onclick="document.getElementById('vi-file-${word}').click()" title="Nhấn để đổi ảnh">
+        ${existing
+          ? `<img src="${existing}" style="width:100%;height:100%;object-fit:cover;">`
+          : `<span style="font-size:1.8rem;">${getEmojiForWord(word)}</span>`}
+      </div>
+      <div style="font-size:0.7rem;font-weight:700;color:var(--text);margin-top:3px;">${word}</div>
+      <input type="file" id="vi-file-${word}" accept="image/*" style="display:none"
+        onchange="uploadVocabImg(this,'${word}')">
+    </div>`;
+  }).join('');
+}
+
+function getEmojiForWord(w) {
+  const map = {pen:'🖊️',rubber:'🧹',pencil:'✏️',ruler:'📏',book:'📚',bag:'🎒',
+    cat:'🐱',dog:'🐶',fish:'🐟',bird:'🐦',apple:'🍎',banana:'🍌',
+    door:'🚪',window:'🪟',doll:'🪆',ball:'⚽',car:'🚗',kite:'🪁'};
+  return map[w.toLowerCase()] || '🖼️';
+}
+
+async function uploadVocabImg(input, word) {
+  const file = input.files[0]; if (!file) return;
+  toast('⏳ Đang upload ảnh...');
+  try {
+    const fname = `vocab/${word.toLowerCase()}_${Date.now()}.jpg`;
+    const {data:up, error} = await sb.storage.from('vocab-images').upload(fname, file, {upsert:true});
+    if (error) throw error;
+    const {data:urlData} = sb.storage.from('vocab-images').getPublicUrl(fname);
+    currentVocabImages[word.toLowerCase()] = urlData.publicUrl;
+    refreshVocabImages();
+    toast('✅ Đã upload ảnh cho: ' + word);
+  } catch(e) {
+    // Fallback: store as base64 in memory
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      currentVocabImages[word.toLowerCase()] = ev.target.result;
+      refreshVocabImages();
+      toast('✅ Ảnh đã lưu tạm (cần Supabase Storage để lưu lâu dài)');
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+// ── WORDWALL LINKS MANAGEMENT ──
+let currentWWLinks = []; // links being edited
+
+function renderWWLinks() {
+  const list = document.getElementById('ww-links-list');
+  if(!list) return;
+  if(!currentWWLinks.length) {
+    list.innerHTML = '<div style="color:var(--muted);font-size:0.82rem;text-align:center;padding:8px;background:var(--bg);border-radius:8px;">Chưa có bài tập. Thêm link bên dưới!</div>';
+    return;
+  }
+  const catIcons = {'Mầm non':'🌸','Tiểu học':'📚','Từ vựng':'🃏','Trắc nghiệm':'📝','Sắp xếp câu':'🔤','Nghe':'🎧','Nói':'🎤','Bài tập':'🎯'};
+  const catColors = {'Mầm non':'#FCE4EC','Tiểu học':'#E3F2FD','Từ vựng':'#E8F5E9','Trắc nghiệm':'#FFF3E0','Sắp xếp câu':'#F3E5F5','Nghe':'#E0F7FA','Nói':'#FFF9C4','Bài tập':'#F5F5F5'};
+  list.innerHTML = currentWWLinks.map((lk,i) => {
+    const cat = lk.category||lk.group||'Bài tập';
+    const ic = catIcons[cat]||'🎯';
+    const bg = catColors[cat]||'#F5F5F5';
+    return `<div style="background:var(--bg);border-radius:10px;padding:9px 12px;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:1.3rem;flex-shrink:0;width:32px;height:32px;background:${bg};border-radius:8px;display:flex;align-items:center;justify-content:center;">${ic}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span style="font-weight:700;font-size:0.85rem;">${lk.name}</span>
+          <span style="background:${bg};padding:1px 7px;border-radius:20px;font-size:0.68rem;font-weight:700;">${cat}</span>
+        </div>
+        <div style="font-size:0.7rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px;">${lk.url}</div>
+      </div>
+      <div style="display:flex;gap:5px;flex-shrink:0;">
+        <button onclick="editWWLink(${i})" style="background:#E3F2FD;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:0.75rem;font-weight:700;">✏️</button>
+        <button onclick="removeWWLink(${i})" style="background:#FFEBEE;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:0.75rem;font-weight:700;">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function addWWLink() {
+  const name = document.getElementById('ww-new-name').value.trim();
+  const url = document.getElementById('ww-new-url').value.trim();
+  const cat = document.getElementById('ww-new-cat').value;
+  if(!name||!url) { toast('⚠️ Nhập tên và link!'); return; }
+  if(!url.includes('http')) { toast('⚠️ Link không hợp lệ!'); return; }
+  currentWWLinks.push({name, url, category:cat, type:'Wordwall'});
+  document.getElementById('ww-new-name').value = '';
+  document.getElementById('ww-new-url').value = '';
+  renderWWLinks();
+  toast('✅ Đã thêm: ' + name);
+}
+
+function editWWLink(idx) {
+  const lk = currentWWLinks[idx];
+  document.getElementById('ww-new-name').value = lk.name;
+  document.getElementById('ww-new-url').value = lk.url;
+  removeWWLink(idx);
+}
+
+function removeWWLink(idx) {
+  currentWWLinks.splice(idx, 1);
+  renderWWLinks();
+}
+
+// ── UNIT ACTION HELPER ──
+function unitAction(btn){
+  const id = btn.dataset.id;
+  const action = btn.dataset.action;
+  if(!id){alert('Error: no id'); return;}
+  if(action==='view') viewUnit(id);
+  else if(action==='edit') editExtra(id);
+  else if(action==='edit-close'){closeModal('modal-view-unit'); editExtra(id);}
+  else if(action==='del') deleteCurriculumExtra(id);
+}
+
+// ── ADD NEW UNIT ──
+function openAddUnit(){
+  document.getElementById('modal-unit-title').textContent = '➕ Thêm unit / chủ đề mới';
+  document.getElementById('edit-extra-id').value = '';
+  document.getElementById('curr-book').value = document.getElementById('bulk-book').value || 'faf';
+  document.getElementById('curr-level').value = document.getElementById('bulk-level').value || '';
+  document.getElementById('curr-unit').value = '';
+  document.getElementById('curr-vocab').value = '';
+  document.getElementById('curr-sentences').value = '';
+  document.getElementById('curr-prompts').value = '';
+  updateUnitLabel();
+  openModal('modal-unit-edit');
+}
+
+function updateUnitLabel(){
+  const book = document.getElementById('curr-book')?.value;
+  const lbl = document.getElementById('unit-label-text');
+  if(!lbl) return;
+  if(book==='mamnon'||book==='topics') lbl.textContent = 'Chủ đề *';
+  else lbl.textContent = 'Unit *';
+}
+
+// ── VIEW UNIT DETAIL ──
+function viewUnit(id){
+  const u = allExtras.find(x=>x.id===id); if(!u) return;
+  const bookNames = {gs:'Global Success', faf:'Family & Friends', mamnon:'Mầm non', topics:'Chủ đề'};
+  const vocab = Array.isArray(u.vocab_list)?u.vocab_list:[];
+  const sentences = Array.isArray(u.sample_sentences)?u.sample_sentences:[];
+  const prompts = Array.isArray(u.speaking_prompts)?u.speaking_prompts:[];
+  document.getElementById('view-unit-body').innerHTML = `
+    <div style="font-family:'Baloo 2',cursive;font-size:1.15rem;font-weight:800;margin-bottom:14px;color:#1565C0;">
+      📚 ${bookNames[u.book]||u.book} — ${u.level_id} — ${u.unit_number}
+    </div>
+    <div style="margin-bottom:12px;">
+      <div style="font-weight:800;font-size:0.8rem;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">📝 Từ vựng (${vocab.length})</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;">
+        ${vocab.map(w=>'<span style="background:#E3F2FD;color:#1565C0;padding:3px 10px;border-radius:20px;font-size:0.82rem;font-weight:600;">'+w+'</span>').join('')||'<span style="color:var(--muted)">Chưa có</span>'}
+      </div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <div style="font-weight:800;font-size:0.8rem;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">💬 Mẫu câu (${sentences.length})</div>
+      ${sentences.map(s=>'<div style="background:#E8F5E9;padding:6px 12px;border-radius:8px;font-size:0.85rem;margin-bottom:4px;border-left:3px solid #43A047;">'+s+'</div>').join('')||'<span style="color:var(--muted)">Chưa có</span>'}
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="font-weight:800;font-size:0.8rem;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">🎤 Gợi ý Sunny AI</div>
+      ${prompts.map(p=>'<div style="background:#FFF3E0;padding:6px 12px;border-radius:8px;font-size:0.85rem;margin-bottom:4px;border-left:3px solid #FB8C00;">'+p+'</div>').join('')||'<span style="color:var(--muted)">Chưa có</span>'}
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary btn-sm" data-id="${u.id}" data-action="edit-close" onclick="unitAction(this)">✏️ Sửa</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-view-unit')">Đóng</button>
+    </div>`;
+  openModal('modal-view-unit');
+}
+
+// ══════════════════════════════════════
+// ── BOOKS MANAGEMENT ──
+// ══════════════════════════════════════
+let allBooks = [];
+
+async function loadBooks(){
+  const grid = document.getElementById('books-grid');
+  if(!grid) return;
+  grid.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);grid-column:1/-1;">⏳ Đang tải...</div>';
+  try{
+    const{data, error} = await sb.from('books').select('*').order('sort_order').order('created_at');
+    if(error) throw error;
+    allBooks = data || [];
+    renderBooks(allBooks);
+  }catch(e){
+    grid.innerHTML = `<div style="grid-column:1/-1;background:#FFF3E0;border:2px solid #FFB74D;border-radius:12px;padding:20px;">
+      <div style="font-weight:800;margin-bottom:8px;">⚠️ Chưa tạo bảng books — Chạy SQL sau trong Supabase:</div>
+      <pre style="background:#1a1a2e;color:#00ff88;padding:12px;border-radius:8px;font-size:0.78rem;overflow-x:auto;white-space:pre-wrap;">create table if not exists books (
+  id uuid default gen_random_uuid() primary key,
+  code text unique not null,
+  name text not null,
+  name_vi text,
+  category text default 'general',
+  levels jsonb default '[]',
+  color text default '#2196F3',
+  icon text default '📗',
+  is_active boolean default true,
+  sort_order integer default 0,
+  created_at timestamptz default now()
+);
+alter table books disable row level security;</pre>
+      <button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="loadBooks()">🔄 Thử lại</button>
+    </div>`;
+  }
+}
+
+function renderBooks(books){
+  const grid = document.getElementById('books-grid');
+  if(!books||!books.length){
+    grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);grid-column:1/-1;"><div style="font-size:2rem;margin-bottom:8px;">📭</div><div>Chưa có sách tuỳ chỉnh. Nhấn "+ Thêm sách mới"!</div></div>';
+    return;
+  }
+  const catNames = {primary:'Tiểu học',preschool:'Mầm non',cambridge:'Cambridge',general:'Chủ đề',other:'Khác'};
+  grid.innerHTML = books.map(b => {
+    const levels = Array.isArray(b.levels) ? b.levels : [];
+    return '<div style="background:white;border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);border:2px solid '+(b.is_active?b.color||'#2196F3':'#E8EDF2')+';">'
+      +'<div style="background:'+(b.color||'#2196F3')+';padding:14px 16px;display:flex;align-items:center;gap:10px;">'
+      +'<span style="font-size:1.8rem;">'+(b.icon||'📗')+'</span>'
+      +'<div style="flex:1;"><div style="font-family:Baloo 2,cursive;font-weight:800;font-size:1rem;color:white;">'+b.name+'</div>'
+      +'<div style="font-size:0.75rem;color:rgba(255,255,255,0.8);">'+(b.name_vi||'')+'</div></div>'
+      +(!b.is_active?'<span style="background:rgba(0,0,0,0.3);color:white;font-size:0.7rem;padding:2px 8px;border-radius:20px;font-weight:700;">ẨN</span>':'')
+      +'</div>'
+      +'<div style="padding:12px 14px;">'
+      +'<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">'
+      +'<span style="background:#E3F2FD;color:#1565C0;padding:3px 10px;border-radius:20px;font-size:0.72rem;font-weight:700;">🏷 '+b.code+'</span>'
+      +'<span style="background:#F3E5F5;color:#6A1B9A;padding:3px 10px;border-radius:20px;font-size:0.72rem;font-weight:700;">'+(catNames[b.category]||b.category)+'</span>'
+      +'<span style="background:#E8F5E9;color:#2E7D32;padding:3px 10px;border-radius:20px;font-size:0.72rem;font-weight:700;">'+levels.length+' level</span>'
+      +'</div>'
+      +(levels.length?'<div style="margin-bottom:8px;">'+levels.map(l=>'<span style="display:inline-block;background:var(--bg);border-radius:4px;padding:2px 7px;margin:2px;font-size:0.72rem;">'+(typeof l==='object'?l.label||l.code:l)+'</span>').join('')+'</div>':'')
+      +'<div style="display:flex;gap:6px;">'
+      +'<button class="btn btn-primary btn-sm" style="flex:1;" data-bid="'+b.id+'" data-baction="edit" onclick="bookAction(this)">✏️ Sửa</button>'
+      +'<button class="btn btn-sm" style="flex:1;background:'+(b.is_active?'#FFF3E0':'#E8F5E9')+';color:'+(b.is_active?'#E65100':'#2E7D32')+';border:1px solid;"'
+      +' data-bid="'+b.id+'" data-baction="toggle" onclick="bookAction(this)">'+(b.is_active?'👁 Ẩn':'👁 Hiện')+'</button>'
+      +'<button class="btn btn-sm" style="background:#FFEBEE;color:#C62828;border:1px solid #FFCDD2;" data-bid="'+b.id+'" data-baction="delete" onclick="bookAction(this)" title="Xoá sách">🗑️</button>'
+      +'</div>'
+      +'<div style="font-size:0.72rem;color:var(--muted);margin-top:6px;text-align:right;">Thứ tự: '+b.sort_order+'</div>'
+      +'</div></div>';
+  }).join('');
+}
+
+function bookAction(btn){
+  const id = btn.dataset.bid, action = btn.dataset.baction;
+  if(action==='edit') editBook(id);
+  else if(action==='toggle') toggleBook(id);
+  else if(action==='delete') deleteBook(id);
+}
+
+function openAddBook(){
+  document.getElementById('modal-book-title').textContent = '📚 Thêm sách mới';
+  ['edit-book-id','book-code','book-name','book-name-vi','book-levels'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('book-icon').value = '📗';
+  document.getElementById('book-color').value = '#2196F3';
+  document.getElementById('book-category').value = 'primary';
+  document.getElementById('book-active').checked = true;
+  document.getElementById('book-code').disabled = false;
+  document.getElementById('book-sort').value = '0';
+  openModal('modal-book-edit');
+}
+
+function editBook(id){
+  const b = allBooks.find(x=>x.id===id); if(!b) return;
+  document.getElementById('modal-book-title').textContent = '✏️ Sửa — '+b.name;
+  document.getElementById('edit-book-id').value = id;
+  document.getElementById('book-code').value = b.code;
+  document.getElementById('book-code').disabled = true;
+  document.getElementById('book-name').value = b.name;
+  document.getElementById('book-name-vi').value = b.name_vi||'';
+  document.getElementById('book-icon').value = b.icon||'📗';
+  document.getElementById('book-color').value = b.color||'#2196F3';
+  document.getElementById('book-category').value = b.category||'primary';
+  document.getElementById('book-active').checked = b.is_active;
+  const levels = Array.isArray(b.levels)?b.levels:[];
+  document.getElementById('book-levels').value = levels.map(l=>typeof l==='object'?(l.code+'|'+l.label):l).join('\n');
+  document.getElementById('book-sort').value = b.sort_order||0;
+  openModal('modal-book-edit');
+}
+
+async function saveBook(){
+  const id = document.getElementById('edit-book-id').value;
+  const code = document.getElementById('book-code').value.trim().replace(/\s+/g,'').toLowerCase();
+  const name = document.getElementById('book-name').value.trim();
+  if(!code||!name){toast('⚠️ Nhập mã sách và tên!'); return;}
+  const levelsRaw = document.getElementById('book-levels').value.trim();
+  const levels = levelsRaw ? levelsRaw.split('\n').map(line=>{
+    const p=line.trim().split('|');
+    return p.length>=2?{code:p[0].trim(),label:p.slice(1).join('|').trim()}:{code:line.trim(),label:line.trim()};
+  }).filter(l=>l.code) : [];
+  const record = {code,name,name_vi:document.getElementById('book-name-vi').value.trim(),
+    icon:document.getElementById('book-icon').value.trim()||'📗',
+    color:document.getElementById('book-color').value,
+    category:document.getElementById('book-category').value,
+    levels, is_active:document.getElementById('book-active').checked,
+    sort_order:parseInt(document.getElementById('book-sort').value)||0};
+  try{
+    if(id){await sb.from('books').update(record).eq('id',id);}
+    else{await sb.from('books').insert(record);}
+    closeModal('modal-book-edit'); loadBooks(); toast('✅ Đã lưu sách!');
+  }catch(e){toast('⚠️ Lỗi: '+(e.message||'Mã sách có thể đã tồn tại'));}
+}
+
+async function toggleBook(id){
+  const b=allBooks.find(x=>x.id===id); if(!b) return;
+  await sb.from('books').update({is_active:!b.is_active}).eq('id',id);
+  loadBooks(); toast(b.is_active?'👁 Đã ẩn':'✅ Đã hiện');
+}
+
+async function deleteBook(id){
+  const b=allBooks.find(x=>x.id===id); if(!b) return;
+  if(!confirm('Xoá sách "'+b.name+'"?')) return;
+  await sb.from('books').delete().eq('id',id);
+  loadBooks(); toast('🗑️ Đã xoá');
+}
+
+</script>
+<!-- ═══ MODAL: ADD/EDIT UNIT ═══ -->
+<div class="modal-overlay" id="modal-unit-edit">
+  <div class="modal" style="max-width:580px;">
+    <div class="modal-title" id="modal-unit-title">➕ Thêm unit / chủ đề mới</div>
+    <input type="hidden" id="edit-extra-id">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div class="form-group" style="margin:0;"><label class="form-label">Loại sách *</label>
+        <select class="form-input" id="curr-book" onchange="updateUnitLabel()">
+          <option value="gs">Global Success</option>
+          <option value="faf">Family &amp; Friends</option>
+          <option value="mamnon">Mầm non</option>
+          <option value="topics">Chủ đề tự do</option>
+        </select></div>
+      <div class="form-group" style="margin:0;"><label class="form-label">Level / Lớp *</label>
+        <input class="form-input" id="curr-level" placeholder="gs3, faf1, mn1..."></div>
+      <div class="form-group" style="margin:0;"><label class="form-label" id="unit-label-text">Unit / Chủ đề *</label>
+        <input class="form-input" id="curr-unit" placeholder="1, Animals, Colors..."></div>
+    </div>
+    <div class="form-group"><label class="form-label">📝 Từ vựng (cách nhau bằng dấu phẩy)</label>
+      <textarea class="form-input" id="curr-vocab" rows="3" placeholder="cat, dog, fish, bird..." oninput="refreshVocabImages()"></textarea></div>
+    <div class="form-group">
+      <label class="form-label">🖼️ Ảnh minh hoạ từng từ <span style="color:var(--muted);font-weight:400;">(tuỳ chọn — để trống sẽ tự tìm tự động)</span></label>
+      <div id="vocab-img-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;"></div>
+      <div style="font-size:0.72rem;color:var(--muted);margin-top:4px;">💡 Nhấn vào từng từ để upload ảnh đẹp hơn. Ảnh tải lên Supabase Storage.</div>
+    </div>
+    <div class="form-group"><label class="form-label">💬 Mẫu câu (mỗi câu một dòng)</label>
+      <textarea class="form-input" id="curr-sentences" rows="3" placeholder="What is this?&#10;It is a cat."></textarea></div>
+    <div class="form-group"><label class="form-label">🎤 Gợi ý Sunny AI</label>
+      <textarea class="form-input" id="curr-prompts" rows="2" placeholder="Ask about animals..."></textarea></div>
+    <!-- Wordwall links section -->
+    <div style="border-top:2px solid var(--border);margin-top:4px;padding-top:14px;">
+      <div style="font-weight:800;font-size:0.85rem;color:var(--text);margin-bottom:10px;">
+        🎮 Bài tập Wordwall
+        <span style="font-size:0.75rem;color:var(--muted);font-weight:400;"> — Thêm link từng bài tập</span>
+      </div>
+      <div id="ww-links-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Tên bài tập *</label>
+          <input class="form-input" id="ww-new-name" placeholder="VD: Sắp xếp câu Unit 1" style="font-size:0.85rem;padding:8px 10px;">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Nhóm học sinh</label>
+          <select class="form-input" id="ww-new-cat" style="font-size:0.85rem;padding:8px 10px;">
+            <option value="Mầm non">🌸 Mầm non</option>
+            <option value="Tiểu học" selected>📚 Tiểu học</option>
+            <option value="Từ vựng">🃏 Từ vựng</option>
+            <option value="Trắc nghiệm">📝 Trắc nghiệm</option>
+            <option value="Sắp xếp câu">🔤 Sắp xếp câu</option>
+            <option value="Nghe">🎧 Nghe</option>
+            <option value="Nói">🎤 Nói</option>
+            <option value="Bài tập">🎯 Bài tập chung</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:flex-end;">
+        <div class="form-group" style="margin:0;flex:1;">
+          <label class="form-label">Link Wordwall *</label>
+          <input class="form-input" id="ww-new-url" placeholder="https://wordwall.net/resource/..." style="font-size:0.85rem;padding:8px 10px;">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="addWWLink()" style="height:38px;white-space:nowrap;flex-shrink:0;">+ Thêm</button>
+      </div>
+      <div style="font-size:0.72rem;color:var(--muted);margin-top:5px;">💡 Wordwall → Share → Copy link → paste vào đây. Thêm bao nhiêu link tuỳ ý!</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-unit-edit')">Huỷ</button>
+      <button class="btn btn-success" onclick="saveCurriculumExtra()">💾 Lưu tất cả</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: VIEW UNIT ═══ -->
+<div class="modal-overlay" id="modal-view-unit">
+  <div class="modal" style="max-width:600px;">
+    <div id="view-unit-body"></div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: ADD STUDENT ═══ -->
+<div class="modal-overlay" id="modal-add-student">
+  <div class="modal">
+    <div class="modal-title" id="modal-student-title">➕ Thêm học sinh mới</div>
+    <input type="hidden" id="edit-student-id">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group"><label class="form-label">Họ và tên *</label><input class="form-input" id="s-fullname" placeholder="Nguyễn Văn An"></div>
+      <div class="form-group"><label class="form-label">Tên đăng nhập *</label><input class="form-input" id="s-username" placeholder="nguyenvanan"></div>
+      <div class="form-group"><label class="form-label">Mật khẩu *</label><input class="form-input" id="s-password" placeholder="Tối thiểu 4 ký tự"></div>
+      <div class="form-group"><label class="form-label">Lớp</label><input class="form-input" id="s-class" placeholder="3A, 4B, Level 2..."></div>
+      <div class="form-group"><label class="form-label">Ngày sinh</label><input class="form-input" id="s-dob" type="date"></div>
+      <div class="form-group"><label class="form-label">Giới tính</label>
+        <select class="form-input" id="s-gender"><option value="male">Nam</option><option value="female">Nữ</option></select></div>
+    </div>
+    <div class="form-group"><label class="form-label">Avatar emoji</label>
+      <input class="form-input" id="s-avatar" placeholder="🐱 hoặc 🌟" value="🌟"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-add-student')">Huỷ</button>
+      <button class="btn btn-primary btn-sm" onclick="saveStudent()">💾 Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: STUDENT DETAIL ═══ -->
+<div class="modal-overlay" id="modal-student-detail">
+  <div class="modal" style="max-width:680px;">
+    <div class="student-profile" id="detail-profile"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:16px;" id="detail-stats"></div>
+    <div style="margin-bottom:12px;font-weight:800;font-size:0.9rem;">📋 Lịch sử bài luyện nói</div>
+    <div id="detail-sessions" style="max-height:300px;overflow-y:auto;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-student-detail')">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: ADD PICTURE ═══ -->
+<div class="modal-overlay" id="modal-add-picture">
+  <div class="modal">
+    <div class="modal-title">🖼️ Thêm tranh luyện nói</div>
+    <div class="form-group"><label class="form-label">Tiêu đề (tiếng Anh) *</label><input class="form-input" id="pic-title" placeholder="At the Park"></div>
+    <div class="form-group"><label class="form-label">Tiêu đề tiếng Việt</label><input class="form-input" id="pic-title-vi" placeholder="Ở công viên"></div>
+    <div class="form-group"><label class="form-label">Chủ đề</label><input class="form-input" id="pic-topic" placeholder="outdoors, school, family..."></div>
+    <div class="form-group"><label class="form-label">Cấp độ</label>
+      <select class="form-input" id="pic-level"><option value="all">Tất cả</option><option value="gs3">GS Lớp 3</option><option value="faf1">F&F Level 1</option></select></div>
+    <div class="form-group"><label class="form-label">Link ảnh (URL)</label><input class="form-input" id="pic-url" placeholder="https://..."></div>
+    <div class="form-group"><label class="form-label">Upload ảnh</label>
+      <div class="upload-area" onclick="document.getElementById('pic-file').click()">
+        <input type="file" id="pic-file" accept="image/*" onchange="previewPic(this)" style="display:none">
+        <div id="pic-preview" style="font-size:2rem;">📷</div>
+        <div style="color:var(--muted);font-size:0.85rem;margin-top:6px;">Nhấn để chọn ảnh</div>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Câu hỏi gợi ý (mỗi câu 1 dòng)</label>
+      <textarea class="form-input" id="pic-questions" rows="4" placeholder="What can you see?&#10;What are the children doing?"></textarea></div>
+    <div class="form-group"><label class="form-label">Gợi ý từ vựng (cách nhau bằng dấu phẩy)</label>
+      <input class="form-input" id="pic-vocab" placeholder="tree, children, sunny, playing"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-add-picture')">Huỷ</button>
+      <button class="btn btn-primary btn-sm" onclick="savePicture()">💾 Lưu tranh</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: ADD/EDIT BOOK ═══ -->
+<div class="modal-overlay" id="modal-book-edit">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-title" id="modal-book-title">📚 Thêm sách mới</div>
+    <input type="hidden" id="edit-book-id">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px;">
+      <div class="form-group">
+        <label class="form-label">Mã sách (code) * <span style="color:var(--muted);font-weight:400;">không dấu, không space</span></label>
+        <input class="form-input" id="book-code" placeholder="vd: mamnon, cambridge, tienganh1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Icon emoji</label>
+        <input class="form-input" id="book-icon" placeholder="📗 📘 🎯 🏆 🌟" value="📗">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tên sách (tiếng Anh) *</label>
+      <input class="form-input" id="book-name" placeholder="vd: Macmillan English, Big English...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tên sách (tiếng Việt)</label>
+      <input class="form-input" id="book-name-vi" placeholder="vd: Mầm non – Học qua Trò Chơi">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group">
+        <label class="form-label">Danh mục</label>
+        <select class="form-input" id="book-category">
+          <option value="primary">Tiểu học</option>
+          <option value="preschool">Mầm non</option>
+          <option value="cambridge">Cambridge</option>
+          <option value="general">Chủ đề tự do</option>
+          <option value="other">Khác</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Màu chủ đạo</label>
+        <input class="form-input" type="color" id="book-color" value="#2196F3" style="height:42px;padding:4px;">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Các Level / Lớp <span style="color:var(--muted);font-weight:400;">(mỗi level một dòng, format: code|tên)</span></label>
+      <textarea class="form-input" id="book-levels" rows="5"
+        placeholder="mn1|Nhà trẻ (3 tuổi)&#10;mn2|Mẫu giáo bé (4 tuổi)&#10;mn3|Mẫu giáo nhỡ (5 tuổi)&#10;mn4|Mẫu giáo lớn (6 tuổi)"></textarea>
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:3px;">Ví dụ: <code>mn1|Nhà trẻ</code> → code=mn1, tên=Nhà trẻ</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group" style="display:flex;align-items:center;gap:10px;">
+        <input type="checkbox" id="book-active" checked style="width:18px;height:18px;cursor:pointer;">
+        <label for="book-active" style="font-weight:700;font-size:0.9rem;cursor:pointer;">Hiển thị cho học sinh</label>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Thứ tự hiển thị</label>
+        <input class="form-input" type="number" id="book-sort" value="0" min="0" style="padding:8px 12px;">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-book-edit')">Huỷ</button>
+      <button class="btn btn-success" onclick="saveBook()">💾 Lưu sách</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
