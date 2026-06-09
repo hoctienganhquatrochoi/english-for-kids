@@ -5,20 +5,44 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin – English for Kids</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+// ── SINGLE EXTRACT (for modal) ──
+async function singleExtractOnly(){
+  const raw = document.getElementById('single-raw-input').value.trim();
+  const apiKey = document.getElementById('user-api-key')?.value?.trim();
+  if(!raw){toast('⚠️ Paste nội dung trước!');return;}
+  if(!apiKey){toast('⚠️ Cần API key ở phần Cách 2!');return;}
+  toast('⏳ AI đang trích xuất...');
+  try{
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,
+        messages:[{role:'user',content:`Extract from this English lesson. Return ONLY JSON no markdown:
+{"vocab_list":["word1","word2"],"sample_sentences":["S1.","S2."],"speaking_prompts":["p1","p2"]}
+Content: ${raw}`}]})
+    });
+    const data = await res.json();
+    const parsed = JSON.parse(data.content?.map(c=>c.text||'').join('').replace(/\`\`\`json|\`\`\`/g,'').trim());
+    document.getElementById('curr-vocab').value = (parsed.vocab_list||[]).join(', ');
+    document.getElementById('curr-sentences').value = (parsed.sample_sentences||[]).join('\n');
+    document.getElementById('curr-prompts').value = (parsed.speaking_prompts||[]).join('\n');
+    toast('✅ Đã trích xuất! Kiểm tra rồi nhấn Lưu.');
+  }catch(e){toast('⚠️ Lỗi: '+e.message);}
+}
+
 // ── ADD NEW UNIT ──
 function openAddUnit(){
+  document.getElementById('modal-unit-title').textContent = '➕ Thêm unit mới';
   document.getElementById('edit-extra-id').value = '';
-  document.getElementById('curr-book').value = document.getElementById('bulk-book').value || 'gs';
+  document.getElementById('curr-book').value = document.getElementById('bulk-book').value || 'faf';
   document.getElementById('curr-level').value = document.getElementById('bulk-level').value || '';
   document.getElementById('curr-unit').value = '';
   document.getElementById('curr-vocab').value = '';
   document.getElementById('curr-sentences').value = '';
   document.getElementById('curr-prompts').value = '';
   document.getElementById('single-raw-input').value = '';
-  const el = document.getElementById('single-unit-edit');
-  el.style.display = 'block';
-  el.scrollIntoView({behavior:'smooth'});
-  document.getElementById('curr-unit').focus();
+  openModal('modal-unit-edit');
+  setTimeout(()=>document.getElementById('curr-unit').focus(), 200);
 }
 
 // ── VIEW UNIT DETAIL ──
@@ -340,47 +364,12 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
           <div class="card-title" style="margin:0;">📋 Nội dung đã lưu trong hệ thống</div>
           <div style="display:flex;gap:8px;align-items:center;">
             <input class="form-input" id="curr-filter" placeholder="Lọc: gs3, faf2..." style="max-width:180px;padding:7px 11px;font-size:0.85rem;" oninput="filterCurrExtras()">
-            <button class="btn btn-outline btn-sm" onclick="loadCurriculumExtras()">🔄</button>
+            <button class="btn btn-primary btn-sm" onclick="loadCurriculumExtras()" style="white-space:nowrap;">🔄 Tải dữ liệu</button>
           </div>
         </div>
-        <div id="curr-extras-list"><div style="color:var(--muted);font-size:0.85rem;text-align:center;padding:20px;">Đang tải...</div></div>
+        <div id="curr-extras-list"><div style="text-align:center;padding:20px;color:var(--muted);">Nhấn <b>🔄 Tải dữ liệu</b> để xem nội dung đã lưu</div></div>
       </div>
 
-      <!-- EDIT SINGLE UNIT (hidden, shown on click) -->
-      <div id="single-unit-edit" style="display:none;">
-        <div class="card" style="border:2px solid var(--blue2);">
-          <div class="card-title">✏️ Sửa nội dung 1 unit</div>
-          <input type="hidden" id="edit-extra-id">
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
-            <div class="form-group" style="margin:0;"><label class="form-label">Sách</label>
-              <select class="form-input" id="curr-book">
-                <option value="gs">Global Success</option>
-                <option value="faf">Family &amp; Friends</option>
-                <option value="topics">Chủ đề</option>
-              </select></div>
-            <div class="form-group" style="margin:0;"><label class="form-label">Level</label>
-              <input class="form-input" id="curr-level" placeholder="gs3, faf2..."></div>
-            <div class="form-group" style="margin:0;"><label class="form-label">Unit</label>
-              <input class="form-input" id="curr-unit" placeholder="1, 2..."></div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">📋 Paste nội dung mới (AI trích xuất tự động)</label>
-            <textarea class="form-input" id="single-raw-input" rows="5" placeholder="Paste nội dung unit từ NotebookLM..."></textarea>
-          </div>
-          <div class="form-group"><label class="form-label">Từ vựng</label>
-            <textarea class="form-input" id="curr-vocab" rows="3" placeholder="pen, rubber, pencil..."></textarea></div>
-          <div class="form-group"><label class="form-label">Mẫu câu</label>
-            <textarea class="form-input" id="curr-sentences" rows="3" placeholder="What&apos;s this?&#10;It&apos;s a pen."></textarea></div>
-          <div class="form-group"><label class="form-label">Gợi ý Sunny AI</label>
-            <textarea class="form-input" id="curr-prompts" rows="2" placeholder="Ask about classroom objects..."></textarea></div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <button class="btn" onclick="singleExtractAndSave()"
-              style="background:linear-gradient(135deg,#FF8F00,#E65100);color:#fff;border:none;">✨ AI Trích xuất &amp; Lưu</button>
-            <button class="btn btn-success" onclick="saveCurriculumExtra()">💾 Lưu thủ công</button>
-            <button class="btn btn-outline btn-sm" onclick="document.getElementById('single-unit-edit').style.display='none';window.scrollTo(0,0);">✕ Đóng</button>
-          </div>
-        </div>
-      </div>
     </div>
     </div>
 
@@ -501,6 +490,7 @@ function switchTab(tabId,el){
   el.classList.add('active');
   if(tabId==='tab-pictures')loadPictures();
   if(tabId==='tab-progress')populateProgressSelect();
+  if(tabId==='tab-curriculum')loadCurriculumExtras();
 }
 
 // ── DASHBOARD ──
@@ -757,11 +747,17 @@ async function deletePicture(id){
 let allExtras = [];
 
 async function loadCurriculumExtras(){
+  const el = document.getElementById('curr-extras-list');
+  if(el) el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);">⏳ Đang tải...</div>';
   try{
-    const{data}=await sb.from('curriculum_extras').select('*').order('book').order('level_id').order('unit_number');
+    const{data, error}=await sb.from('curriculum_extras').select('*').order('book').order('level_id').order('unit_number');
+    if(error) throw error;
     allExtras = data || [];
     renderExtras(allExtras);
-  }catch(e){ document.getElementById('curr-extras-list').innerHTML='<div style="color:var(--muted);text-align:center;padding:20px;">Chưa có nội dung. Paste sách và nhấn Phân tích để bắt đầu!</div>'; }
+  }catch(e){
+    console.error('loadCurriculumExtras error:', e);
+    if(el) el.innerHTML='<div style="color:var(--red);text-align:center;padding:20px;">❌ Lỗi tải: '+e.message+'</div>';
+  }
 }
 
 function filterCurrExtras(){
@@ -832,6 +828,8 @@ function renderExtras(data){
 function editExtra(id){
   const d = allExtras.find(x=>x.id===id);
   if(!d) return;
+  const bookNames = {gs:'Global Success', faf:'Family & Friends', topics:'Chủ đề'};
+  document.getElementById('modal-unit-title').textContent = `✏️ Sửa — ${bookNames[d.book]||d.book} ${d.level_id} Unit ${d.unit_number}`;
   document.getElementById('edit-extra-id').value = id;
   document.getElementById('curr-book').value = d.book;
   document.getElementById('curr-level').value = d.level_id;
@@ -840,9 +838,7 @@ function editExtra(id){
   document.getElementById('curr-sentences').value = Array.isArray(d.sample_sentences) ? d.sample_sentences.join('\n') : '';
   document.getElementById('curr-prompts').value = Array.isArray(d.speaking_prompts) ? d.speaking_prompts.join('\n') : '';
   document.getElementById('single-raw-input').value = '';
-  const el = document.getElementById('single-unit-edit');
-  el.style.display = 'block';
-  el.scrollIntoView({behavior:'smooth'});
+  openModal('modal-unit-edit');
 }
 
 // ── BULK EXTRACT (whole book) ──
@@ -996,7 +992,7 @@ async function saveCurriculumExtra(){
       {book,level_id:level,unit_number:unit,vocab_list:vocab,sample_sentences:sentences,speaking_prompts:prompts,updated_at:new Date().toISOString()},
       {onConflict:'book,level_id,unit_number'}
     );
-    document.getElementById('single-unit-edit').style.display='none';
+    closeModal('modal-unit-edit');
     loadCurriculumExtras(); toast('✅ Đã lưu unit!');
   }catch(e){toast('⚠️ Lỗi: '+e.message);}
 }
