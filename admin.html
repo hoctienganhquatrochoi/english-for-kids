@@ -4,74 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin – English for Kids</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-// ── JSON IMPORT ──
-async function importJSON(input){
-  const file = input.files[0]; if(!file) return;
-  const book = document.getElementById('bulk-book').value;
-  const level = document.getElementById('bulk-level').value.trim();
-  if(!level){toast('⚠️ Nhập Level trước! Ví dụ: faf1');return;}
-  const text = await file.text();
-  await processJSONImport(text, book, level);
-}
-
-function pasteJSONDirect(){
-  document.getElementById('paste-json-area').style.display = 'block';
-  document.getElementById('paste-json-area').scrollIntoView({behavior:'smooth'});
-}
-
-async function importJSONFromPaste(){
-  const text = document.getElementById('json-paste-input').value.trim();
-  const book = document.getElementById('bulk-book').value;
-  const level = document.getElementById('bulk-level').value.trim();
-  if(!text){toast('⚠️ Paste JSON vào trước!');return;}
-  if(!level){toast('⚠️ Nhập Level trước!');return;}
-  await processJSONImport(text, book, level);
-}
-
-async function processJSONImport(jsonText, book, level){
-  const statusEl = document.getElementById('bulk-status');
-  const progressWrap = document.getElementById('bulk-progress-wrap');
-  const progressBar = document.getElementById('bulk-progress-bar');
-  const progressLabel = document.getElementById('bulk-progress-label');
-  statusEl.style.display='block'; statusEl.style.background='#E3F2FD';
-  statusEl.innerHTML='⏳ Đang nhập dữ liệu...';
-  progressWrap.style.display='block'; progressBar.style.width='10%';
-  try{
-    const clean = jsonText.replace(/```json|```/g,'').trim();
-    const units = JSON.parse(clean);
-    if(!Array.isArray(units)||!units.length) throw new Error('JSON không đúng format. Cần là một mảng []');
-    let saved=0, failed=0;
-    for(const u of units){
-      try{
-        await sb.from('curriculum_extras').upsert({
-          book, level_id:level,
-          unit_number: String(u.unit_number),
-          vocab_list: u.vocab_list||[],
-          sample_sentences: u.sample_sentences||[],
-          speaking_prompts: u.speaking_prompts||[],
-          updated_at: new Date().toISOString()
-        },{onConflict:'book,level_id,unit_number'});
-        saved++;
-        progressBar.style.width = Math.min(95, 10+(saved/units.length)*85)+'%';
-        progressLabel.textContent = `Đã lưu ${saved}/${units.length} unit...`;
-      }catch(e){ failed++; }
-    }
-    progressBar.style.width='100%'; progressBar.style.background='#43A047';
-    statusEl.style.background='#E8F5E9';
-    statusEl.innerHTML=`✅ Nhập xong! Đã lưu <b>${saved} unit</b> cho ${book.toUpperCase()} ${level}${failed?` (${failed} lỗi)`:''}`;
-    progressLabel.textContent=`Hoàn tất! ${saved}/${units.length} unit đã lưu.`;
-    loadCurriculumExtras();
-    document.getElementById('paste-json-area').style.display='none';
-    document.getElementById('json-paste-input').value='';
-  }catch(e){
-    statusEl.style.background='#FFEBEE';
-    statusEl.innerHTML='❌ Lỗi: '+(e.message||'JSON không hợp lệ');
-    progressBar.style.background='var(--red)';
-  }
-}
-
-</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
 <style>
 :root{--blue:#1565C0;--blue2:#2196F3;--green:#2E7D32;--green2:#43A047;--orange:#E65100;--orange2:#FB8C00;--red:#C62828;--bg:#F4F7FB;--card:#fff;--text:#1A2332;--muted:#6B7A8D;--border:#E2E8F0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,0.08);}
@@ -996,6 +929,70 @@ async function deleteCurriculumExtra(id){
   await sb.from('curriculum_extras').delete().eq('id',id);
   loadCurriculumExtras(); toast('🗑️ Đã xoá');
 }
+
+// ── JSON IMPORT ──
+async function importJSON(input){
+  const file = input.files[0]; if(!file) return;
+  const book = document.getElementById('bulk-book').value;
+  const level = document.getElementById('bulk-level').value.trim();
+  if(!level){toast('⚠️ Nhập Level trước! Ví dụ: faf1');return;}
+  const text = await file.text();
+  await processJSONImport(text, book, level);
+}
+
+function pasteJSONDirect(){
+  document.getElementById('paste-json-area').style.display = 'block';
+  document.getElementById('paste-json-area').scrollIntoView({behavior:'smooth'});
+}
+
+async function importJSONFromPaste(){
+  const text = document.getElementById('json-paste-input').value.trim();
+  const book = document.getElementById('bulk-book').value;
+  const level = document.getElementById('bulk-level').value.trim();
+  if(!text){toast('⚠️ Paste JSON vào trước!');return;}
+  if(!level){toast('⚠️ Nhập Level trước!');return;}
+  await processJSONImport(text, book, level);
+}
+
+async function processJSONImport(jsonText, book, level){
+  const statusEl = document.getElementById('bulk-status');
+  const progressWrap = document.getElementById('bulk-progress-wrap');
+  const progressBar = document.getElementById('bulk-progress-bar');
+  const progressLabel = document.getElementById('bulk-progress-label');
+  statusEl.style.display='block'; statusEl.style.background='#E3F2FD';
+  statusEl.innerHTML='⏳ Đang nhập dữ liệu...';
+  progressWrap.style.display='block'; progressBar.style.width='10%';
+  try{
+    const clean = jsonText.replace(/```json|```/g,'').trim();
+    const units = JSON.parse(clean);
+    if(!Array.isArray(units)||!units.length) throw new Error('JSON không đúng format. Cần là một mảng []');
+    let saved=0, failed=0;
+    for(const u of units){
+      try{
+        await sb.from('curriculum_extras').upsert({
+          book, level_id:level,
+          unit_number: String(u.unit_number),
+          vocab_list: u.vocab_list||[],
+          sample_sentences: u.sample_sentences||[],
+          speaking_prompts: u.speaking_prompts||[],
+          updated_at: new Date().toISOString()
+        },{onConflict:'book,level_id,unit_number'});
+        saved++;
+        progressBar.style.width = Math.min(95, 10+(saved/units.length)*85)+'%';
+        progressLabel.textContent = `Đã lưu ${saved}/${units.length} unit...`;
+      }catch(e){ failed++; }
+    }
+    progressBar.style.width='100%'; progressBar.style.background='#43A047';
+    statusEl.style.background='#E8F5E9';
+    statusEl.innerHTML=`✅ Nhập xong! Đã lưu <b>${saved} unit</b> cho ${book.toUpperCase()} ${level}${failed?` (${failed} lỗi)`:''}`;
+    progressLabel.textContent=`Hoàn tất! ${saved}/${units.length} unit đã lưu.`;
+    loadCurriculumExtras();
+    document.getElementById('paste-json-area').style.display='none';
+    document.getElementById('json-paste-input').value='';
+  }catch(e){
+    statusEl.style.background='#FFEBEE';
+    statusEl.innerHTML='❌ Lỗi: '+(e.message||'JSON không hợp lệ');
+    progressBar.style.background='var(--red)';
+  }
+}
 </script>
-</body>
-</html>
