@@ -1,0 +1,2004 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Sunny Speaks – English for Kids</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ── */
+:root {
+  --sun: #FFD93D;
+  --sun-dark: #F0B429;
+  --sky: #2196F3;
+  --sky-dark: #1565C0;
+  --sky-light: #E3F2FD;
+  --coral: #FF6B6B;
+  --coral-dark: #E53935;
+  --mint: #43A047;
+  --mint-light: #E8F5E9;
+  --pink: #FF4081;
+  --purple: #9C27B0;
+  --purple-light: #F3E5F5;
+  --bg: #F0F8FF;
+  --card: #fff;
+  --text: #1A2332;
+  --muted: #6B8099;
+  --border: #E2EEF8;
+  --radius: 20px;
+  --radius-sm: 12px;
+  --shadow: 0 4px 20px rgba(33,150,243,0.12);
+  --shadow-lg: 0 8px 32px rgba(33,150,243,0.2);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
+
+/* ── SCREENS ── */
+.screen { display: none; min-height: 100vh; flex-direction: column; }
+.screen.active { display: flex; }
+
+/* ── LOADING ── */
+#loading {
+  position: fixed; inset: 0; background: rgba(255,255,255,0.9);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 9999; display: none;
+}
+#loading.show { display: flex; }
+.spinner { width: 44px; height: 44px; border: 4px solid var(--sky-light); border-top-color: var(--sky); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: #1A2332; color: #fff; padding: 10px 22px; border-radius: 30px;
+  font-size: 0.88rem; font-weight: 700; z-index: 9998; transition: transform 0.3s ease; pointer-events: none;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ══════════════════════════════════════
+   LOGIN SCREEN
+══════════════════════════════════════ */
+#screen-login {
+  background: linear-gradient(160deg, #1565C0 0%, #2196F3 45%, #43A047 100%);
+  align-items: center; justify-content: center; padding: 20px; min-height: 100vh;
+}
+.login-card {
+  background: #fff; border-radius: 28px; width: 100%; max-width: 400px;
+  overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+.login-hero {
+  background: linear-gradient(135deg, #FFD93D 0%, #FF6B6B 50%, #2196F3 100%);
+  padding: 28px 20px 20px; text-align: center; position: relative; overflow: hidden;
+}
+.login-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+.login-logo-circle {
+  width: 88px; height: 88px; background: #fff; border-radius: 50%;
+  margin: 0 auto 12px; display: flex; align-items: center; justify-content: center;
+  font-size: 44px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); position: relative;
+  animation: logoBounce 2s ease-in-out infinite;
+}
+@keyframes logoBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+.login-brand { font-family: 'Baloo 2', cursive; font-size: 1.6rem; font-weight: 900; color: #fff; line-height: 1.1; }
+.login-tagline { font-size: 0.82rem; color: rgba(255,255,255,0.9); margin-top: 4px; font-weight: 600; }
+.login-body { padding: 24px; }
+.login-welcome { font-family: 'Baloo 2', cursive; font-size: 1.2rem; font-weight: 800; color: var(--sky-dark); margin-bottom: 18px; text-align: center; }
+.field { margin-bottom: 14px; }
+.field label { font-size: 0.8rem; font-weight: 800; color: var(--muted); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
+.field input {
+  width: 100%; padding: 13px 16px; border: 2px solid var(--border); border-radius: var(--radius-sm);
+  font-family: 'Nunito', sans-serif; font-size: 0.95rem; color: var(--text); outline: none; transition: border-color 0.2s;
+}
+.field input:focus { border-color: var(--sky); }
+.btn-login {
+  width: 100%; padding: 15px; background: linear-gradient(135deg, var(--sky), var(--sky-dark));
+  color: #fff; border: none; border-radius: var(--radius-sm); font-family: 'Baloo 2', cursive;
+  font-weight: 900; font-size: 1.1rem; cursor: pointer; box-shadow: 0 4px 16px rgba(33,150,243,0.4);
+  transition: all 0.2s; margin-top: 4px; letter-spacing: 0.02em;
+}
+.btn-login:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(33,150,243,0.5); }
+.btn-login:active { transform: scale(0.98); }
+.login-err { color: var(--coral-dark); font-size: 0.82rem; text-align: center; margin-top: 8px; display: none; font-weight: 700; }
+.social-bar { display: flex; justify-content: center; gap: 10px; padding: 0 24px 20px; }
+.social-btn {
+  display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 30px;
+  font-size: 0.8rem; font-weight: 800; text-decoration: none; transition: all 0.15s;
+}
+.s-fb { background: #E8F0FE; color: #1877F2; }
+.s-tt { background: #F5F5F5; color: #333; }
+.social-btn:hover { transform: translateY(-2px); }
+
+/* ══════════════════════════════════════
+   SETUP SCREEN
+══════════════════════════════════════ */
+#screen-setup {
+  background: linear-gradient(160deg, #FFD93D 0%, #FF6B6B 60%, #2196F3 100%);
+  align-items: center; justify-content: center; padding: 20px;
+}
+.setup-card { background: #fff; border-radius: 28px; width: 100%; max-width: 420px; padding: 28px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+.setup-title { font-family: 'Baloo 2', cursive; font-size: 1.5rem; font-weight: 900; text-align: center; color: var(--sky-dark); margin-bottom: 4px; }
+.setup-sub { color: var(--muted); font-size: 0.88rem; text-align: center; margin-bottom: 20px; }
+.avatar-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.av-btn {
+  width: 44px; height: 44px; border-radius: 12px; border: 2px solid var(--border);
+  font-size: 1.6rem; cursor: pointer; background: var(--bg); transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.av-btn.selected { border-color: var(--sky); background: var(--sky-light); transform: scale(1.1); }
+.btn-setup {
+  width: 100%; padding: 14px; background: linear-gradient(135deg, var(--mint), var(--sky-dark));
+  color: #fff; border: none; border-radius: var(--radius-sm); font-family: 'Baloo 2', cursive;
+  font-weight: 900; font-size: 1.05rem; cursor: pointer; margin-top: 8px;
+  box-shadow: 0 4px 14px rgba(67,160,71,0.35); transition: all 0.2s;
+}
+.btn-setup:hover { transform: translateY(-2px); }
+
+/* ══════════════════════════════════════
+   HOME SCREEN
+══════════════════════════════════════ */
+#screen-home { background: var(--bg); }
+
+/* Hero header */
+.home-header {
+  background: linear-gradient(135deg, #1565C0 0%, #2196F3 60%, #0288D1 100%);
+  padding: 16px 20px 20px; position: relative; overflow: hidden;
+}
+.home-header::after {
+  content: ''; position: absolute; bottom: -20px; left: 0; right: 0; height: 40px;
+  background: var(--bg); border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+}
+.header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.header-brand { display: flex; align-items: center; gap: 10px; }
+.brand-badge {
+  width: 42px; height: 42px; background: var(--sun); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 22px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+}
+.brand-name { font-family: 'Baloo 2', cursive; font-size: 1rem; font-weight: 900; color: #fff; line-height: 1.1; }
+.brand-sub { font-size: 0.65rem; color: rgba(255,255,255,0.8); font-weight: 600; }
+.header-right { display: flex; align-items: center; gap: 8px; }
+.student-pill {
+  display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.2);
+  border-radius: 30px; padding: 6px 12px; cursor: pointer;
+}
+.student-av { font-size: 1.2rem; }
+.student-name { color: #fff; font-size: 0.82rem; font-weight: 800; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.logout-pill { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: #fff; padding: 6px 10px; font-size: 0.75rem; cursor: pointer; font-family: 'Nunito', sans-serif; font-weight: 700; }
+
+/* Welcome */
+.home-welcome { padding: 28px 20px 0; }
+.welcome-greeting { font-size: 0.9rem; color: var(--muted); }
+.welcome-name { font-family: 'Baloo 2', cursive; font-size: 1.6rem; font-weight: 900; color: var(--text); line-height: 1.2; }
+
+/* Stats */
+.stats-strip { display: flex; gap: 10px; padding: 14px 20px; overflow-x: auto; scrollbar-width: none; }
+.stats-strip::-webkit-scrollbar { display: none; }
+.stat-pill {
+  background: var(--card); border-radius: 30px; padding: 10px 16px;
+  display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow); flex-shrink: 0;
+}
+.stat-icon { font-size: 1.3rem; }
+.stat-val { font-family: 'Baloo 2', cursive; font-weight: 900; font-size: 1.1rem; line-height: 1; }
+.stat-lbl { font-size: 0.7rem; color: var(--muted); font-weight: 700; }
+
+/* Section */
+.section-head { padding: 4px 20px 10px; display: flex; align-items: center; justify-content: space-between; }
+.section-title { font-family: 'Baloo 2', cursive; font-size: 1.1rem; font-weight: 900; color: var(--text); }
+
+/* Book cards */
+.books-scroll { padding: 0 20px 8px; display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; }
+.books-scroll::-webkit-scrollbar { display: none; }
+.book-card {
+  flex-shrink: 0; width: 150px; border-radius: var(--radius); padding: 18px 14px;
+  cursor: pointer; transition: transform 0.18s, box-shadow 0.18s; position: relative; overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.book-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+.book-card:active { transform: scale(0.96); }
+.book-emoji { font-size: 2.4rem; display: block; margin-bottom: 8px; }
+.book-name { font-family: 'Baloo 2', cursive; font-size: 0.88rem; font-weight: 900; line-height: 1.2; }
+.book-desc { font-size: 0.7rem; opacity: 0.75; margin-top: 3px; font-weight: 600; }
+.book-badge-tag { position: absolute; top: 10px; right: 10px; font-size: 0.6rem; font-weight: 900; padding: 2px 7px; border-radius: 20px; color: #fff; }
+
+/* Recent sessions */
+.recent-list { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 8px; }
+.session-card {
+  background: var(--card); border-radius: var(--radius-sm); padding: 12px 14px;
+  display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  cursor: pointer; transition: all 0.15s;
+}
+.session-card:hover { transform: translateX(3px); }
+.session-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.session-info { flex: 1; }
+.session-topic { font-size: 0.88rem; font-weight: 800; }
+.session-meta { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+.session-score { font-family: 'Baloo 2', cursive; font-weight: 900; font-size: 1.1rem; }
+
+/* ══════════════════════════════════════
+   LEVEL & UNIT SCREENS
+══════════════════════════════════════ */
+#screen-levels, #screen-units, #screen-pictures { background: var(--bg); }
+.sub-header {
+  background: linear-gradient(135deg, var(--sky-dark), var(--sky));
+  padding: 14px 20px; display: flex; align-items: center; gap: 12px;
+  box-shadow: 0 3px 12px rgba(21,101,192,0.25);
+}
+.back-btn {
+  width: 36px; height: 36px; background: rgba(255,255,255,0.2); border: none; border-radius: 10px;
+  color: #fff; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.sub-title { font-family: 'Baloo 2', cursive; font-size: 1.15rem; font-weight: 900; color: #fff; }
+.sub-sub { font-size: 0.72rem; color: rgba(255,255,255,0.8); font-weight: 600; }
+.list-wrap { flex: 1; overflow-y: auto; padding: 14px 20px 20px; display: flex; flex-direction: column; gap: 8px; }
+.level-item {
+  background: var(--card); border-radius: var(--radius-sm); padding: 14px 16px;
+  display: flex; align-items: center; gap: 14px; cursor: pointer; box-shadow: var(--shadow);
+  transition: all 0.15s; border: 2px solid transparent;
+}
+.level-item:hover { border-color: var(--sky); transform: translateX(3px); }
+.level-badge {
+  width: 46px; height: 46px; border-radius: 13px; display: flex; align-items: center;
+  justify-content: center; font-family: 'Baloo 2', cursive; font-weight: 900; font-size: 0.95rem; color: #fff; flex-shrink: 0;
+}
+.level-info { flex: 1; }
+.level-name { font-weight: 800; font-size: 0.95rem; }
+.level-detail { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+.unit-item {
+  background: var(--card); border-radius: var(--radius-sm); padding: 13px 15px;
+  display: flex; align-items: center; gap: 12px; cursor: pointer; box-shadow: var(--shadow);
+  transition: all 0.15s; border: 2px solid transparent;
+}
+.unit-item:hover { border-color: var(--mint); transform: translateX(3px); }
+.unit-num-badge {
+  width: 38px; height: 38px; background: var(--sky-light); border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.88rem; color: var(--sky-dark); flex-shrink: 0;
+}
+.unit-topic { font-weight: 800; font-size: 0.9rem; }
+.unit-vocab { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+.unit-has-content { position: absolute; right: 14px; font-size: 0.65rem; background: var(--mint-light); color: var(--mint); padding: 2px 8px; border-radius: 20px; font-weight: 800; }
+
+/* Picture grid */
+.pic-grid { padding: 14px 20px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pic-card {
+  background: var(--card); border-radius: var(--radius-sm); overflow: hidden;
+  cursor: pointer; box-shadow: var(--shadow); transition: all 0.18s; border: 2px solid transparent;
+}
+.pic-card:hover { border-color: var(--coral); transform: translateY(-3px); }
+.pic-img { width: 100%; height: 100px; object-fit: cover; }
+.pic-img-placeholder { width: 100%; height: 100px; background: linear-gradient(135deg, #FFF3E0, #FFE0B2); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; }
+.pic-info { padding: 9px 10px; }
+.pic-title { font-size: 0.82rem; font-weight: 800; line-height: 1.3; }
+.pic-sub { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+
+/* ══════════════════════════════════════
+   CHAT SCREEN
+══════════════════════════════════════ */
+#screen-chat { background: linear-gradient(160deg, #E8F5FD 0%, #F0FFF4 100%); }
+.chat-bar {
+  background: var(--card); padding: 10px 16px; display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08); flex-shrink: 0;
+}
+.sunny-circle {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--sun), var(--coral));
+  display: flex; align-items: center; justify-content: center; font-size: 26px;
+  box-shadow: 0 3px 12px rgba(255,107,107,0.35); flex-shrink: 0;
+}
+.chat-info { flex: 1; }
+.chat-name { font-weight: 900; font-size: 0.95rem; }
+.chat-topic { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+.stars-row { display: flex; gap: 2px; }
+.star { font-size: 1rem; opacity: 0.25; transition: all 0.3s; }
+.star.lit { opacity: 1; animation: starPop 0.4s ease-out; }
+@keyframes starPop { 0%{transform:scale(0)} 70%{transform:scale(1.4)} 100%{transform:scale(1)} }
+.end-chat-btn {
+  background: var(--mint-light); border: none; border-radius: 10px;
+  color: var(--mint); padding: 8px 12px; font-size: 0.75rem; font-weight: 800; cursor: pointer;
+  flex-shrink: 0; font-family: 'Nunito', sans-serif;
+}
+.chat-msgs {
+  flex: 1; overflow-y: auto; padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.bubble {
+  max-width: 86%; padding: 12px 16px; border-radius: 20px;
+  font-size: 0.9rem; line-height: 1.6; animation: bubbleIn 0.22s ease-out;
+}
+@keyframes bubbleIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+.bubble.sunny {
+  background: var(--card); box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  border-bottom-left-radius: 5px; align-self: flex-start;
+}
+.bubble.user {
+  background: linear-gradient(135deg, var(--sky), var(--sky-dark));
+  color: #fff; border-bottom-right-radius: 5px; align-self: flex-end;
+}
+.thinking {
+  display: flex; gap: 5px; padding: 13px 16px; background: var(--card);
+  border-radius: 20px; border-bottom-left-radius: 5px; width: fit-content;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08); align-self: flex-start;
+}
+.thinking span {
+  width: 8px; height: 8px; background: var(--sky); border-radius: 50%;
+  animation: think 1s ease-in-out infinite;
+}
+.thinking span:nth-child(2){animation-delay:.15s}
+.thinking span:nth-child(3){animation-delay:.3s}
+@keyframes think{0%,80%,100%{transform:scale(0.5);opacity:0.4}40%{transform:scale(1);opacity:1}}
+
+/* Vocab hint chips */
+.vocab-hint { padding: 4px 14px; display: flex; gap: 6px; flex-wrap: wrap; }
+.vocab-chip { background: var(--sky-light); color: var(--sky-dark); font-size: 0.75rem; font-weight: 800; padding: 4px 10px; border-radius: 20px; }
+
+/* Input area */
+.input-area { background: var(--card); padding: 12px 14px; box-shadow: 0 -2px 16px rgba(0,0,0,0.07); flex-shrink: 0; }
+.transcript {
+  min-height: 46px; background: var(--bg); border-radius: 13px; padding: 11px 14px;
+  font-size: 0.9rem; color: var(--text); margin-bottom: 10px; border: 2px solid transparent;
+  outline: none; font-family: 'Nunito', sans-serif; transition: border-color 0.2s; line-height: 1.5;
+}
+.transcript:empty::before { content: attr(data-ph); color: var(--muted); font-style: italic; }
+.transcript.active { border-color: var(--sky); }
+.input-btns { display: flex; gap: 8px; }
+.mic-btn {
+  flex: 1; padding: 13px; border: none; border-radius: 13px;
+  font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 0.95rem; cursor: pointer;
+  background: linear-gradient(135deg, var(--coral), var(--coral-dark)); color: #fff;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  box-shadow: 0 4px 14px rgba(229,57,53,0.35); transition: all 0.2s;
+}
+.mic-btn.on { animation: micPulse 1s ease-in-out infinite; }
+@keyframes micPulse{0%,100%{box-shadow:0 4px 14px rgba(229,57,53,0.35)}50%{box-shadow:0 4px 28px rgba(229,57,53,0.65)}}
+.send-btn, .done-btn {
+  width: 50px; height: 50px; border: none; border-radius: 13px;
+  font-size: 1.2rem; cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.send-btn { background: var(--sky); color: #fff; box-shadow: 0 4px 12px rgba(33,150,243,0.3); }
+.send-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none !important; }
+.done-btn { background: var(--mint); color: #fff; box-shadow: 0 4px 12px rgba(67,160,71,0.3); }
+.send-btn:hover:not(:disabled), .done-btn:hover { transform: translateY(-2px); }
+.speech-hint { font-size: 0.7rem; color: var(--muted); text-align: center; margin-top: 6px; }
+
+/* ══════════════════════════════════════
+   EVALUATION SCREEN
+══════════════════════════════════════ */
+#screen-eval { overflow-y: auto; background: var(--bg); }
+.eval-hero {
+  background: linear-gradient(135deg, #1565C0 0%, #2196F3 60%, #43A047 100%);
+  padding: 24px 20px 28px; text-align: center; position: relative;
+}
+.eval-hero::after {
+  content: ''; position: absolute; bottom: -18px; left: 0; right: 0; height: 36px;
+  background: var(--bg); border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+}
+.eval-badge { font-size: 0.78rem; font-weight: 800; color: rgba(255,255,255,0.75); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 14px; }
+.eval-av-wrap { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 14px; }
+.eval-av {
+  width: 72px; height: 72px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;
+  font-size: 36px; overflow: hidden; flex-shrink: 0;
+}
+.eval-av img { width: 100%; height: 100%; object-fit: cover; }
+.eval-student-name { font-family: 'Baloo 2', cursive; font-size: 1.5rem; font-weight: 900; color: #fff; }
+.eval-student-info { font-size: 0.8rem; color: rgba(255,255,255,0.8); margin-top: 2px; }
+.eval-unit-tag { display: inline-block; background: rgba(255,255,255,0.2); border-radius: 30px; padding: 7px 18px; font-size: 0.85rem; font-weight: 800; color: #fff; }
+.eval-body { padding: 28px 20px 24px; }
+.eval-card { background: var(--card); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow); }
+.eval-card-title { font-family: 'Baloo 2', cursive; font-weight: 900; font-size: 1rem; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+
+/* Total score */
+.total-score {
+  background: linear-gradient(135deg, var(--sun), #FF8F00);
+  border-radius: var(--radius); padding: 20px; text-align: center; margin-bottom: 14px;
+}
+.total-label { font-size: 0.82rem; font-weight: 800; color: rgba(0,0,0,0.55); text-transform: uppercase; letter-spacing: 0.05em; }
+.total-number { font-family: 'Baloo 2', cursive; font-size: 3.2rem; font-weight: 900; color: var(--text); line-height: 1.1; }
+.total-denom { font-size: 1.1rem; color: rgba(0,0,0,0.45); }
+.total-stars-row { font-size: 1.6rem; margin-top: 6px; letter-spacing: 3px; }
+
+/* Score breakdown */
+.score-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.score-item { background: var(--bg); border-radius: var(--radius-sm); padding: 12px 10px; text-align: center; }
+.score-item-label { font-size: 0.7rem; color: var(--muted); font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+.score-bar-bg { height: 7px; background: var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 5px; }
+.score-bar-fill { height: 100%; border-radius: 4px; width: 0; transition: width 0.9s ease-out; }
+.score-num { font-family: 'Baloo 2', cursive; font-size: 1.5rem; font-weight: 900; }
+
+/* Comments */
+.comment-block { background: var(--sky-light); border-left: 4px solid var(--sky); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; padding: 12px 14px; margin-bottom: 10px; }
+.comment-en { font-size: 0.88rem; line-height: 1.65; font-style: italic; }
+.comment-vi { font-size: 0.88rem; line-height: 1.65; color: var(--sky-dark); font-weight: 700; margin-top: 8px; border-top: 1px solid rgba(33,150,243,0.2); padding-top: 8px; }
+.tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.tag { padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; }
+.tag-good { background: var(--mint-light); color: #2E7D32; }
+.tag-improve { background: #FFF3E0; color: #E65100; }
+
+/* Teacher note */
+.teacher-textarea {
+  width: 100%; border: 2px solid var(--border); border-radius: var(--radius-sm);
+  padding: 11px 13px; font-family: 'Nunito', sans-serif; font-size: 0.88rem;
+  color: var(--text); resize: vertical; min-height: 80px; outline: none;
+}
+.teacher-textarea:focus { border-color: var(--sky); }
+.save-note-btn {
+  margin-top: 8px; padding: 9px 18px; background: var(--mint); color: #fff;
+  border: none; border-radius: 10px; font-family: 'Nunito', sans-serif; font-weight: 800;
+  font-size: 0.85rem; cursor: pointer; transition: all 0.18s;
+}
+.save-note-btn:hover { background: #2E7D32; }
+
+/* Eval actions */
+.eval-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+.eval-btn {
+  padding: 13px; border: none; border-radius: var(--radius-sm); font-family: 'Baloo 2', cursive;
+  font-weight: 800; font-size: 0.92rem; cursor: pointer; transition: all 0.18s;
+}
+.eval-btn-primary { background: linear-gradient(135deg, var(--sky), var(--sky-dark)); color: #fff; box-shadow: 0 4px 12px rgba(33,150,243,0.3); }
+.eval-btn-secondary { background: var(--card); color: var(--sky); border: 2px solid var(--sky); }
+.eval-btn:hover { transform: translateY(-2px); }
+.retry-btn {
+  width: 100%; margin-top: 10px; padding: 13px; border: none; border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--coral), var(--coral-dark)); color: #fff;
+  font-family: 'Baloo 2', cursive; font-weight: 900; font-size: 1rem; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(229,57,53,0.3); transition: all 0.2s;
+}
+.retry-btn:hover { transform: translateY(-2px); }
+.footer-brand { text-align: center; padding: 16px 0 0; color: var(--muted); font-size: 0.72rem; }
+.footer-brand a { color: var(--sky); font-weight: 800; text-decoration: none; }
+
+
+
+/* ══ UNIT MODE SCREEN ══ */
+#screen-unit-mode { background: var(--bg); }
+.unit-hero {
+  background: linear-gradient(135deg, #1565C0, #2196F3 50%, #0288D1);
+  padding: 20px 20px 50px; position: relative; overflow: hidden;
+}
+.unit-hero::after {
+  content:''; position:absolute; bottom:-2px; left:0; right:0; height:40px;
+  background:var(--bg); border-radius:50% 50% 0 0/100% 100% 0 0;
+}
+.unit-hero-badge {
+  display:inline-block; background:rgba(255,255,255,0.2); border-radius:20px;
+  padding:4px 14px; font-size:0.75rem; font-weight:800; color:#fff;
+  margin-bottom:10px; letter-spacing:.04em;
+}
+.unit-hero-title {
+  font-family:'Baloo 2',cursive; font-size:1.5rem; font-weight:900; color:#fff;
+  line-height:1.2; margin-bottom:6px;
+}
+.unit-hero-sub { font-size:0.82rem; color:rgba(255,255,255,0.8); font-weight:600; }
+.unit-vocab-preview {
+  display:flex; gap:6px; flex-wrap:wrap; margin-top:12px;
+}
+.uvp-chip {
+  background:rgba(255,255,255,0.2); color:#fff; padding:4px 11px;
+  border-radius:20px; font-size:0.75rem; font-weight:700;
+}
+.mode-cards { padding:20px; display:flex; flex-direction:column; gap:14px; }
+.mode-card {
+  background:var(--card); border-radius:22px; overflow:hidden;
+  box-shadow:var(--shadow); cursor:pointer; transition:all 0.2s;
+  border:3px solid transparent; position:relative;
+}
+.mode-card:hover { transform:translateY(-3px); box-shadow:var(--shadow-lg); }
+.mode-card:active { transform:scale(0.98); }
+.mode-card-inner { display:flex; align-items:center; gap:0; }
+.mode-icon-wrap {
+  width:90px; min-height:90px; display:flex; align-items:center; justify-content:center;
+  font-size:2.8rem; flex-shrink:0; position:relative;
+}
+.mode-body { flex:1; padding:16px 16px 16px 4px; }
+.mode-title { font-family:'Baloo 2',cursive; font-size:1.1rem; font-weight:900; margin-bottom:3px; }
+.mode-desc { font-size:0.8rem; color:var(--muted); line-height:1.5; }
+.mode-meta { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+.mode-tag { font-size:0.68rem; font-weight:800; padding:3px 9px; border-radius:20px; }
+.mode-arrow { font-size:1.3rem; color:var(--muted); padding-right:14px; flex-shrink:0; }
+/* Mode colors */
+.mode-vocab { border-color:#E3F2FD; }
+.mode-vocab .mode-icon-wrap { background:linear-gradient(135deg,#E3F2FD,#BBDEFB); }
+.mode-vocab .mode-title { color:#1565C0; }
+.mode-vocab .mode-tag { background:#E3F2FD; color:#1565C0; }
+.mode-speak { border-color:#E8F5E9; }
+.mode-speak .mode-icon-wrap { background:linear-gradient(135deg,#E8F5E9,#C8E6C9); }
+.mode-speak .mode-title { color:#2E7D32; }
+.mode-speak .mode-tag { background:#E8F5E9; color:#2E7D32; }
+.mode-card.mode-speak { background:linear-gradient(to right,#fff,#F1FFF4); }
+.mode-card.mode-vocab { background:linear-gradient(to right,#fff,#F0F8FF); }
+/* XP badge */
+.xp-badge {
+  position:absolute; top:-6px; right:-6px;
+  background:linear-gradient(135deg,#FFD93D,#FF8F00);
+  color:#333; font-size:0.65rem; font-weight:900;
+  padding:3px 8px; border-radius:20px; border:2px solid #fff;
+  box-shadow:0 2px 8px rgba(255,143,0,0.4);
+}
+/* Wordwall list */
+.ww-list { padding:0 20px 20px; display:flex; flex-direction:column; gap:8px; }
+.ww-item {
+  background:var(--card); border-radius:14px; padding:12px 16px;
+  display:flex; align-items:center; gap:12px; cursor:pointer;
+  box-shadow:0 2px 10px rgba(0,0,0,0.06); transition:all 0.15s;
+  border:2px solid transparent; text-decoration:none;
+}
+.ww-item:hover { border-color:#1565C0; transform:translateX(3px); }
+.ww-icon { width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg,#E3F2FD,#BBDEFB); display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0; }
+.ww-info { flex:1; }
+.ww-name { font-weight:800; font-size:0.9rem; color:var(--text); }
+.ww-type { font-size:0.72rem; color:var(--muted); margin-top:2px; }
+.ww-play { background:var(--sky); color:#fff; border:none; border-radius:10px; padding:8px 14px; font-size:0.78rem; font-weight:800; cursor:pointer; font-family:'Nunito',sans-serif; flex-shrink:0; transition:all 0.15s; }
+.ww-play:hover { background:var(--sky-dark); transform:scale(1.05); }
+/* Embed iframe */
+.ww-embed-wrap {
+  position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:500;
+  display:none; flex-direction:column;
+}
+.ww-embed-wrap.show { display:flex; }
+.ww-embed-header {
+  background:#1565C0; padding:10px 16px; display:flex; align-items:center; gap:10px; flex-shrink:0;
+}
+.ww-embed-title { font-weight:800; color:#fff; font-size:0.95rem; flex:1; }
+.ww-embed-close { background:rgba(255,255,255,0.2); border:none; border-radius:8px; color:#fff; padding:7px 14px; font-size:0.85rem; cursor:pointer; font-family:'Nunito',sans-serif; font-weight:800; }
+.ww-embed-iframe { flex:1; border:none; width:100%; }
+
+/* ── FLASHCARD ── */
+.flashcard-wrap {
+  padding: 10px 16px 6px; flex-shrink: 0;
+}
+.flashcard {
+  background: var(--card); border-radius: 18px;
+  overflow: hidden; box-shadow: var(--shadow);
+  display: flex; align-items: center; gap: 14px;
+  padding: 0; transition: all 0.3s; position: relative;
+  border: 2px solid var(--border);
+  animation: cardSlide 0.35s ease-out;
+}
+@keyframes cardSlide { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
+.flashcard-img {
+  width: 90px; height: 90px; object-fit: cover; flex-shrink: 0;
+  background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
+}
+.flashcard-img-placeholder {
+  width: 90px; height: 90px; display: flex; align-items: center;
+  justify-content: center; font-size: 2.8rem; background: linear-gradient(135deg, #E3F2FD, #E8F5E9);
+  flex-shrink: 0;
+}
+.flashcard-body { flex: 1; padding: 10px 14px 10px 0; }
+.flashcard-word {
+  font-family: 'Baloo 2', cursive; font-size: 1.3rem; font-weight: 900;
+  color: var(--sky-dark); line-height: 1.1;
+}
+.flashcard-phonetic { font-size: 0.75rem; color: var(--muted); margin-top: 1px; }
+.flashcard-vi { font-size: 0.8rem; color: var(--mint); font-weight: 700; margin-top: 3px; }
+.flashcard-progress {
+  position: absolute; top: 8px; right: 10px;
+  font-size: 0.68rem; background: var(--sky-light); color: var(--sky-dark);
+  padding: 2px 8px; border-radius: 20px; font-weight: 800;
+}
+.fc-nav { display: flex; gap: 6px; margin-top: 7px; }
+.fc-nav-btn {
+  flex: 1; padding: 6px; border: none; border-radius: 8px; font-size: 0.75rem;
+  font-weight: 800; cursor: pointer; font-family: 'Nunito', sans-serif; transition: all 0.15s;
+}
+.fc-prev { background: var(--border); color: var(--muted); }
+.fc-next { background: var(--sky-light); color: var(--sky-dark); }
+.fc-nav-btn:hover { transform: translateY(-1px); }
+.fc-shuffle { background: var(--purple-light); color: var(--purple); }
+
+/* ── SESSION STATS ── */
+.session-mini-stats {
+  display: flex; gap: 8px; padding: 4px 16px 6px; flex-shrink: 0;
+}
+.mini-stat {
+  background: var(--card); border-radius: 20px; padding: 4px 10px;
+  font-size: 0.72rem; font-weight: 800; display: flex; align-items: center; gap: 4px;
+}
+
+/* ── PRINT ── */
+@media print {
+  #screen-eval { display: block !important; }
+  .eval-hero { background: #1565C0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .total-score { background: #FFD93D !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .eval-actions, .retry-btn, .save-note-btn, .teacher-textarea { display: none !important; }
+}
+
+/* ── MOBILE ── */
+@media(max-width:380px) {
+  .books-scroll .book-card { width: 130px; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading"><div class="spinner"></div></div>
+<div class="toast" id="toast"></div>
+
+<!-- ══════════ SCREEN: LOGIN ══════════ -->
+<div class="screen active" id="screen-login">
+  <div class="login-card">
+    <div class="login-hero">
+      <div class="login-logo-circle">🌟</div>
+      <div class="login-brand">English for Kids</div>
+      <div class="login-tagline">✨ Học qua Trò Chơi ✨</div>
+    </div>
+    <div class="login-body">
+      <div class="login-welcome">Chào mừng bé quay lại! 👋</div>
+      <div class="field">
+        <label>Tên đăng nhập</label>
+        <input id="li-user" type="text" placeholder="Nhập tên đăng nhập..." autocomplete="username">
+      </div>
+      <div class="field">
+        <label>Mật khẩu</label>
+        <input id="li-pass" type="password" placeholder="Nhập mật khẩu..." autocomplete="current-password">
+      </div>
+      <button class="btn-login" onclick="doLogin()">🚀 Vào học nào!</button>
+      <div class="login-err" id="li-err">❌ Sai tên đăng nhập hoặc mật khẩu!</div>
+    </div>
+    <div class="social-bar">
+      <a href="https://www.facebook.com/hoctienganhquatrochoi" target="_blank" class="social-btn s-fb">📘 Fanpage</a>
+      <a href="https://www.tiktok.com/@hocquatrochoi" target="_blank" class="social-btn s-tt">🎵 TikTok</a>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SCREEN: SETUP ══════════ -->
+<div class="screen" id="screen-setup">
+  <div class="setup-card">
+    <div style="text-align:center;font-size:52px;margin-bottom:8px;">👋</div>
+    <div class="setup-title">Chào bạn mới!</div>
+    <div class="setup-sub">Điền thông tin để Sunny nhận ra bé nhé</div>
+    <div class="field"><label>Họ và tên *</label><input id="su-name" type="text" placeholder="Ví dụ: Nguyễn Văn An"></div>
+    <div class="field"><label>Ngày sinh *</label><input id="su-dob" type="date"></div>
+    <div class="field"><label>Giới tính</label>
+      <select id="su-gender" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:12px;font-family:'Nunito',sans-serif;font-size:0.92rem;outline:none;">
+        <option value="male">Nam</option><option value="female">Nữ</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Chọn avatar 🎭</label>
+      <div class="avatar-grid" id="av-grid"></div>
+    </div>
+    <div class="field">
+      <label>Ảnh (tuỳ chọn)</label>
+      <input type="file" id="su-photo" accept="image/*" capture="user" style="font-size:0.85rem;">
+    </div>
+    <button class="btn-setup" onclick="doSetup()">✅ Bắt đầu học thôi!</button>
+  </div>
+</div>
+
+<!-- ══════════ SCREEN: HOME ══════════ -->
+<div class="screen" id="screen-home">
+  <div class="home-header">
+    <div class="header-top">
+      <div class="header-brand">
+        <div class="brand-badge">🌟</div>
+        <div>
+          <div class="brand-name">English for Kids</div>
+          <div class="brand-sub">Học qua Trò Chơi</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="student-pill">
+          <span class="student-av" id="h-av">⭐</span>
+          <span class="student-name" id="h-name">Bé</span>
+        </div>
+        <button class="logout-pill" onclick="doLogout()">Thoát</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="home-welcome" style="padding-top:28px;">
+    <div class="welcome-greeting">Xin chào,</div>
+    <div class="welcome-name" id="h-fullname">Học sinh 👋</div>
+  </div>
+
+  <div class="stats-strip">
+    <div class="stat-pill">
+      <span class="stat-icon">📚</span>
+      <div><div class="stat-val" id="s-sessions" style="color:var(--sky)">0</div><div class="stat-lbl">Bài đã luyện</div></div>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-icon">⭐</span>
+      <div><div class="stat-val" id="s-avg" style="color:var(--sun-dark)">—</div><div class="stat-lbl">Điểm TB</div></div>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-icon">🔥</span>
+      <div><div class="stat-val" id="s-streak" style="color:var(--coral)">0</div><div class="stat-lbl">Ngày liên tiếp</div></div>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-icon">🏆</span>
+      <div><div class="stat-val" id="s-best" style="color:var(--mint)">—</div><div class="stat-lbl">Điểm cao nhất</div></div>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <div class="section-title">📚 Chọn sách để luyện nói</div>
+  </div>
+
+  <div class="books-scroll" id="books-scroll">
+    <!-- Filled by JS -->
+  </div>
+
+  <div id="recent-section" style="display:none;">
+    <div class="section-head" style="padding-top:8px;">
+      <div class="section-title">🕐 Luyện gần đây</div>
+    </div>
+    <div class="recent-list" id="recent-list"></div>
+  </div>
+</div>
+
+<!-- ══════════ SCREEN: LEVELS ══════════ -->
+<div class="screen" id="screen-levels">
+  <div class="sub-header">
+    <button class="back-btn" onclick="showScreen('screen-home')">←</button>
+    <div>
+      <div class="sub-title" id="lv-title">Chọn lớp</div>
+      <div class="sub-sub" id="lv-sub">Chọn level để học</div>
+    </div>
+  </div>
+  <div class="list-wrap" id="lv-list"></div>
+</div>
+
+<!-- ══════════ SCREEN: UNITS ══════════ -->
+<div class="screen" id="screen-units">
+  <div class="sub-header">
+    <button class="back-btn" onclick="showScreen('screen-levels')">←</button>
+    <div>
+      <div class="sub-title" id="un-title">Chọn bài</div>
+      <div class="sub-sub" id="un-sub">Chọn unit để luyện nói</div>
+    </div>
+  </div>
+  <div class="list-wrap" id="un-list"></div>
+</div>
+
+<!-- ══════════ SCREEN: PICTURES ══════════ -->
+<div class="screen" id="screen-pictures">
+  <div class="sub-header">
+    <button class="back-btn" onclick="showScreen('screen-home')">←</button>
+    <div>
+      <div class="sub-title">🖼️ Luyện nói theo tranh</div>
+      <div class="sub-sub">Mô tả tranh cùng Sunny AI</div>
+    </div>
+  </div>
+  <div class="pic-grid" id="pic-grid"></div>
+  <div id="pic-empty" style="display:none;text-align:center;padding:40px 20px;color:var(--muted);">
+    <div style="font-size:2.5rem;margin-bottom:8px;">🖼️</div>
+    <div>Giáo viên chưa thêm tranh. Hãy chờ nhé!</div>
+  </div>
+</div>
+
+
+<!-- ══════════ SCREEN: UNIT MODE ══════════ -->
+<div class="screen" id="screen-unit-mode">
+  <div class="sub-header">
+    <button class="back-btn" onclick="showScreen('screen-units')">←</button>
+    <div>
+      <div class="sub-title" id="um-level-label">Unit</div>
+      <div class="sub-sub" id="um-book-label">Chọn hoạt động</div>
+    </div>
+  </div>
+
+  <div class="unit-hero">
+    <div class="unit-hero-badge" id="um-badge">📚 Unit 1</div>
+    <div class="unit-hero-title" id="um-title">Loading...</div>
+    <div class="unit-hero-sub" id="um-sub">Chọn hoạt động bên dưới để bắt đầu!</div>
+    <div class="unit-vocab-preview" id="um-vocab-chips"></div>
+  </div>
+
+  <div class="mode-cards">
+    <!-- Mode 1: Từ vựng & Ngữ pháp (Wordwall) -->
+    <div class="mode-card mode-vocab" onclick="showVocabSection()">
+      <div class="mode-card-inner">
+        <div class="mode-icon-wrap">
+          <span>📝</span>
+          <div class="xp-badge">+10 XP</div>
+        </div>
+        <div class="mode-body">
+          <div class="mode-title">Từ vựng & Ngữ pháp</div>
+          <div class="mode-desc">Trắc nghiệm, sắp xếp câu và luyện tập từ vựng qua các trò chơi thú vị!</div>
+          <div class="mode-meta">
+            <span class="mode-tag">🎮 Wordwall</span>
+            <span class="mode-tag" id="um-ww-count">0 bài tập</span>
+          </div>
+        </div>
+        <div class="mode-arrow">›</div>
+      </div>
+    </div>
+
+    <!-- Mode 2: Luyện nói -->
+    <div class="mode-card mode-speak" onclick="startSpeaking()">
+      <div class="mode-card-inner">
+        <div class="mode-icon-wrap">
+          <span>🎤</span>
+          <div class="xp-badge">+20 XP</div>
+        </div>
+        <div class="mode-body">
+          <div class="mode-title">Luyện nói với Sunny</div>
+          <div class="mode-desc">Nói chuyện với Sunny AI — được khen, sửa lỗi và nhận phiếu đánh giá sau mỗi buổi!</div>
+          <div class="mode-meta">
+            <span class="mode-tag">🌟 AI Coach</span>
+            <span class="mode-tag">📊 Có phiếu đánh giá</span>
+          </div>
+        </div>
+        <div class="mode-arrow">›</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wordwall section (hidden initially) -->
+  <div id="ww-section" style="display:none;">
+    <div style="padding:0 20px 8px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-family:'Baloo 2',cursive;font-weight:900;font-size:1rem;color:var(--text);">🎮 Bài tập Wordwall</div>
+      <button onclick="hideVocabSection()" style="background:var(--border);border:none;border-radius:8px;padding:6px 12px;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;">Ẩn ↑</button>
+    </div>
+    <div class="ww-list" id="ww-list">
+      <div style="text-align:center;padding:20px;color:var(--muted);">
+        <div style="font-size:1.8rem;margin-bottom:8px;">📭</div>
+        <div style="font-size:0.85rem;">Chưa có bài tập. Giáo viên sẽ thêm sớm!</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Wordwall embed overlay -->
+<div class="ww-embed-wrap" id="ww-embed-wrap">
+  <div class="ww-embed-header">
+    <span style="font-size:1.2rem;">🎮</span>
+    <div class="ww-embed-title" id="ww-embed-title">Bài tập</div>
+    <button class="ww-embed-close" onclick="closeWWEmbed()">✕ Đóng</button>
+  </div>
+  <iframe class="ww-embed-iframe" id="ww-embed-iframe" src="" allowfullscreen></iframe>
+</div>
+
+<!-- ══════════ SCREEN: CHAT ══════════ -->
+<div class="screen" id="screen-chat">
+  <div class="chat-bar">
+    <button class="back-btn" style="background:var(--sky-light);color:var(--sky-dark);" onclick="confirmLeave()">←</button>
+    <div class="sunny-circle">🌟</div>
+    <div class="chat-info">
+      <div class="chat-name">Sunny 🌟</div>
+      <div class="chat-topic" id="chat-topic">AI Speaking Coach</div>
+    </div>
+    <div class="stars-row">
+      <span class="star" id="cs1">⭐</span><span class="star" id="cs2">⭐</span>
+      <span class="star" id="cs3">⭐</span><span class="star" id="cs4">⭐</span><span class="star" id="cs5">⭐</span>
+    </div>
+    <button id="tts-toggle-btn" onclick="toggleTTS()" style="background:var(--sky-light);border:none;border-radius:10px;color:var(--sky-dark);padding:8px 10px;font-size:1rem;cursor:pointer;flex-shrink:0;">🔊</button>
+    <button class="end-chat-btn" onclick="endSession()">✅ Xong</button>
+  </div>
+  <!-- Flashcard -->
+  <div class="flashcard-wrap" id="flashcard-wrap" style="display:none;">
+    <div class="flashcard" id="flashcard">
+      <div class="flashcard-img-placeholder" id="fc-placeholder">🖼️</div>
+      <img id="fc-img" class="flashcard-img" style="display:none;" alt="word">
+      <div class="flashcard-body">
+        <div class="flashcard-word" id="fc-word">—</div>
+        <div class="flashcard-phonetic" id="fc-phonetic"></div>
+        <div class="flashcard-vi" id="fc-vi"></div>
+        <div class="fc-nav">
+          <button class="fc-nav-btn fc-prev" onclick="fcNav(-1)">← Trước</button>
+          <button class="fc-nav-btn fc-shuffle" onclick="fcShuffle()">🔀</button>
+          <button class="fc-nav-btn fc-next" onclick="fcNav(1)">Tiếp →</button>
+        </div>
+      </div>
+      <div class="flashcard-progress" id="fc-progress">1/10</div>
+    </div>
+  </div>
+  <div class="session-mini-stats" id="session-mini-stats" style="display:none;">
+    <div class="mini-stat" style="color:var(--mint)">✅ <span id="ms-correct">0</span> đúng</div>
+    <div class="mini-stat" style="color:var(--orange)">🔄 <span id="ms-turns">0</span> lượt</div>
+    <div class="mini-stat" style="color:var(--sky)">📚 <span id="ms-words">0</span> từ</div>
+  </div>
+  <div class="vocab-hint" id="vocab-hint" style="display:none;"></div>
+  <div class="chat-msgs" id="chat-msgs"></div>
+  <div class="input-area">
+    <div class="transcript" id="transcript" contenteditable="true"
+      data-ph="Nhấn 🎤 để nói hoặc gõ câu trả lời..." oninput="onInput()"></div>
+    <div class="input-btns">
+      <button class="mic-btn" id="mic-btn" onclick="toggleMic()">
+        🎤 <span id="mic-lbl">Nhấn để nói</span>
+      </button>
+      <button class="send-btn" id="send-btn" onclick="sendMsg()" disabled title="Gửi">➤</button>
+      <button class="done-btn" onclick="endSession()" title="Kết thúc & xem đánh giá">🏁</button>
+    </div>
+    <div class="speech-hint" id="speech-hint"></div>
+  </div>
+</div>
+
+<!-- ══════════ SCREEN: EVALUATION ══════════ -->
+<div class="screen" id="screen-eval">
+  <div class="eval-hero">
+    <div class="eval-badge">📋 Phiếu đánh giá kỹ năng nói · English for Kids</div>
+    <div class="eval-av-wrap">
+      <div class="eval-av" id="ev-av">🌟</div>
+      <div>
+        <div class="eval-student-name" id="ev-name">Học sinh</div>
+        <div class="eval-student-info" id="ev-info">—</div>
+        <div class="eval-student-info" id="ev-date">—</div>
+      </div>
+    </div>
+    <div class="eval-unit-tag" id="ev-unit">📚 —</div>
+  </div>
+
+  <div class="eval-body">
+    <!-- Total -->
+    <div class="total-score">
+      <div class="total-label">Tổng điểm</div>
+      <div><span class="total-number" id="ev-total">—</span><span class="total-denom">/10</span></div>
+      <div class="total-stars-row" id="ev-stars">⭐⭐⭐⭐⭐</div>
+    </div>
+
+    <!-- Breakdown -->
+    <div class="eval-card">
+      <div class="eval-card-title">📊 Chi tiết điểm</div>
+      <div class="score-grid" id="ev-score-grid"></div>
+    </div>
+
+    <!-- AI comment -->
+    <div class="eval-card">
+      <div class="eval-card-title">💬 Nhận xét từ Sunny</div>
+      <div class="comment-block">
+        <div class="comment-en" id="ev-comment-en">—</div>
+        <div class="comment-vi" id="ev-comment-vi">—</div>
+      </div>
+      <div class="tag-row" id="ev-strengths"></div>
+      <div class="tag-row" id="ev-improve"></div>
+    </div>
+
+    <!-- Teacher note -->
+    <div class="eval-card">
+      <div class="eval-card-title">✏️ Nhận xét của giáo viên</div>
+      <textarea class="teacher-textarea" id="ev-teacher-note" placeholder="Giáo viên thêm nhận xét tại đây..."></textarea>
+      <button class="save-note-btn" onclick="saveNote()">💾 Lưu nhận xét</button>
+    </div>
+
+    <!-- Actions -->
+    <div class="eval-actions">
+      <button class="eval-btn eval-btn-primary" onclick="showScreen('screen-home')">🏠 Về trang chủ</button>
+      <button class="eval-btn eval-btn-secondary" onclick="window.print()">🖨️ In phiếu</button>
+    </div>
+    <button class="retry-btn" onclick="practiceMore()">🔁 Luyện thêm bài mới!</button>
+
+    <div class="footer-brand">
+      <a href="https://www.facebook.com/hoctienganhquatrochoi" target="_blank">📘 Facebook</a> &nbsp;·&nbsp;
+      <a href="https://www.tiktok.com/@hocquatrochoi" target="_blank">🎵 TikTok</a><br>
+      <span style="margin-top:4px;display:block;">English for Kids – Học qua Trò Chơi</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════
+const SUPA_URL = 'https://ybqbweywgkbfidhlcjeh.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlicWJ3ZXl3Z2tiZmlkaGxjamVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4MTU3OTAsImV4cCI6MjA5NjM5MTc5MH0.DD1sJjgbIv82fgLk3SPxpGDg7ENo9jPO0nD63UVKN9g';
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ══════════════════════════════════════
+// HARDCODED CURRICULUM (fallback)
+// ══════════════════════════════════════
+const BOOKS_DEFAULT = [
+  { code:'gs', name:'Global Success', name_vi:'Sách Bộ GD&ĐT', icon:'📗', color:'#1565C0',
+    levels:[
+      {code:'gs3',label:'Lớp 3',units:20},
+      {code:'gs4',label:'Lớp 4',units:20},
+      {code:'gs5',label:'Lớp 5',units:20}
+    ]
+  },
+  { code:'faf', name:'Family & Friends', name_vi:'Oxford · Level 1–5', icon:'📘', color:'#2E7D32',
+    levels:[
+      {code:'faf1',label:'Level 1',units:16},
+      {code:'faf2',label:'Level 2',units:16},
+      {code:'faf3',label:'Level 3',units:12},
+      {code:'faf4',label:'Level 4',units:12},
+      {code:'faf5',label:'Level 5',units:12}
+    ]
+  },
+  { code:'topics', name:'Chủ đề tự do', name_vi:'Animals · Food · Family…', icon:'🎯', color:'#E65100',
+    levels:[{code:'topics_all',label:'Tất cả chủ đề',units:15}]
+  },
+  { code:'picture', name:'Luyện nói tranh', name_vi:'Mô tả tranh với Sunny', icon:'🖼️', color:'#7B1FA2',
+    levels:[], isPicture:true
+  }
+];
+
+const BOOK_COLORS = { gs:'#1565C0', faf:'#2E7D32', topics:'#E65100', picture:'#7B1FA2', mamnon:'#FF4081', cambridge:'#5D4037' };
+const SCORE_COLORS = ['#2196F3','#43A047','#FB8C00','#9C27B0'];
+const SCORE_LABELS = ['Fluency\n(Lưu loát)','Vocabulary\n(Từ vựng)','Grammar\n(Ngữ pháp)','Confidence\n(Tự tin)'];
+const AVATARS = ['🐱','🐶','🐻','🐼','🦊','🐸','🦁','🐯','🐨','🐮','🐷','🦄','🐙','🐧','🦋','🌟'];
+
+// ══════════════════════════════════════
+// STATE
+// ══════════════════════════════════════
+let student = null;
+let currentBook = null, currentLevel = null, currentUnit = null;
+let chatHistory = [], sessionStart = null, sessionId = null;
+let isRecording = false, recognition = null, speechOK = false;
+let currentText = '';
+
+// ══════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function showLoad(v) { document.getElementById('loading').classList.toggle('show', v); }
+function toast(msg, dur=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+function calcAge(dob) { return dob ? Math.floor((Date.now()-new Date(dob))/31557600000) : 8; }
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+window.onload = async () => {
+  buildAvatarGrid();
+  const saved = localStorage.getItem('efk_student');
+  if (saved) {
+    student = JSON.parse(saved);
+    await showHome();
+  }
+  // Enter key on login
+  document.getElementById('li-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+  // Transcript enter
+  document.getElementById('transcript').addEventListener('keydown', e => {
+    if(e.key==='Enter'&&!e.shiftKey&&!document.getElementById('send-btn').disabled){e.preventDefault();sendMsg();}
+  });
+};
+
+function buildAvatarGrid() {
+  const grid = document.getElementById('av-grid');
+  AVATARS.forEach(a => {
+    const btn = document.createElement('button');
+    btn.className = 'av-btn'; btn.textContent = a;
+    btn.type = 'button';
+    btn.onclick = () => { grid.querySelectorAll('.av-btn').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected'); };
+    grid.appendChild(btn);
+  });
+}
+
+// ══════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════
+async function doLogin() {
+  const user = document.getElementById('li-user').value.trim();
+  const pass = document.getElementById('li-pass').value.trim();
+  if (!user||!pass) { showErr('Vui lòng nhập đầy đủ!'); return; }
+  showLoad(true);
+  try {
+    const {data, error} = await sb.from('students')
+      .select('*')
+      .eq('username', user)
+      .eq('password', pass)
+      .eq('is_active', true)
+      .maybeSingle();
+    showLoad(false);
+    if (error) {
+      console.error('Login error:', error);
+      showErr('Lỗi kết nối. Thử lại nhé!');
+      return;
+    }
+    if (!data) {
+      showErr('Sai tên đăng nhập hoặc mật khẩu!');
+      return;
+    }
+    student = data;
+    localStorage.setItem('efk_student', JSON.stringify(data));
+    if (!data.full_name || data.full_name === data.username) {
+      showScreen('screen-setup');
+    } else {
+      await showHome();
+    }
+  } catch(e) {
+    showLoad(false);
+    console.error('Login catch:', e);
+    showErr('Lỗi kết nối: ' + e.message);
+  }
+}
+
+function showErr(msg) {
+  const el = document.getElementById('li-err');
+  el.textContent = '❌ ' + msg; el.style.display='block';
+  setTimeout(()=>el.style.display='none', 3000);
+}
+
+function doLogout() {
+  if (!confirm('Bạn muốn thoát không?')) return;
+  student = null; localStorage.removeItem('efk_student');
+  showScreen('screen-login');
+}
+
+// ══════════════════════════════════════
+// SETUP
+// ══════════════════════════════════════
+async function doSetup() {
+  const name = document.getElementById('su-name').value.trim();
+  const dob = document.getElementById('su-dob').value;
+  if (!name||!dob) { toast('⚠️ Nhập họ tên và ngày sinh!'); return; }
+  const sel = document.querySelector('#av-grid .av-btn.selected');
+  const emoji = sel ? sel.textContent : '🌟';
+  const photo = document.getElementById('su-photo').files[0];
+  showLoad(true);
+  let avatarUrl = null;
+  if (photo) {
+    try {
+      const fname = `${student.id}_${Date.now()}.jpg`;
+      const {data:up} = await sb.storage.from('student-photos').upload(fname, photo, {upsert:true});
+      if (up) { const {data:url} = sb.storage.from('student-photos').getPublicUrl(fname); avatarUrl = url.publicUrl; }
+    } catch(e) {}
+  }
+  const updates = {full_name:name, birth_date:dob, gender:document.getElementById('su-gender').value, avatar_emoji:emoji};
+  if (avatarUrl) updates.avatar_url = avatarUrl;
+  try { await sb.from('students').update(updates).eq('id',student.id); } catch(e) {}
+  student = {...student,...updates};
+  localStorage.setItem('efk_student', JSON.stringify(student));
+  showLoad(false);
+  await showHome();
+}
+
+// ══════════════════════════════════════
+// HOME
+// ══════════════════════════════════════
+async function showHome() {
+  const name = student.full_name || student.username;
+  document.getElementById('h-av').textContent = student.avatar_emoji || '⭐';
+  document.getElementById('h-name').textContent = name.split(' ').pop();
+  document.getElementById('h-fullname').textContent = name + ' 👋';
+  showScreen('screen-home');
+  renderBooks();
+  loadStats();
+}
+
+async function renderBooks() {
+  const wrap = document.getElementById('books-scroll');
+  wrap.innerHTML = '<div style="padding:20px;color:var(--muted);font-size:0.85rem;">⏳ Đang tải...</div>';
+
+  // Try Supabase custom books first
+  let customBooks = [];
+  try {
+    const {data} = await sb.from('books').select('*').eq('is_active',true).order('sort_order');
+    if (data && data.length) customBooks = data.map(b => ({
+      code:b.code, name:b.name, name_vi:b.name_vi||'', icon:b.icon||'📗', color:b.color||'#2196F3',
+      levels: Array.isArray(b.levels) ? b.levels.map(l=>({code:l.code||l,label:l.label||l,units:0})) : [],
+      isCustom: true
+    }));
+  } catch(e) {}
+
+  // Merge: hardcoded defaults + custom books, deduplicate by code
+  const customCodes = new Set(customBooks.map(b => b.code));
+  const defaultsFiltered = BOOKS_DEFAULT.filter(b => !customCodes.has(b.code));
+  const allBooks = [...defaultsFiltered, ...customBooks];
+
+  wrap.innerHTML = '';
+
+  const gradients = {
+    gs:['#E3F2FD','#1565C0'], faf:['#E8F5E9','#2E7D32'],
+    topics:['#FFF3E0','#E65100'], picture:['#F3E5F5','#7B1FA2'],
+    mamnon:['#FCE4EC','#E91E63'], cambridge:['#EFEBE9','#5D4037']
+  };
+  
+  allBooks.forEach(book => {
+    const grad = gradients[book.code] || ['#F5F5F5','#424242'];
+    const card = document.createElement('div');
+    card.className = 'book-card';
+    card.style.background = `linear-gradient(145deg, ${grad[0]}, white)`;
+    card.style.border = `2px solid ${grad[0]}`;
+    card.innerHTML = `
+      <span class="book-emoji">${book.icon}</span>
+      <div class="book-name" style="color:${grad[1]}">${book.name}</div>
+      <div class="book-desc">${book.name_vi||''}</div>`;
+    if (book.code==='picture') { card.innerHTML += `<span class="book-badge-tag" style="background:${grad[1]}">HOT</span>`; }
+    card.onclick = () => selectBook(book);
+    wrap.appendChild(card);
+  });
+}
+
+async function loadStats() {
+  try {
+    const {data} = await sb.from('speaking_sessions').select('score_total,created_at').eq('student_id',student.id).eq('completed',true).order('created_at',{ascending:false}).limit(20);
+    if (!data||!data.length) return;
+    document.getElementById('s-sessions').textContent = data.length;
+    const avg = (data.reduce((s,r)=>s+(r.score_total||0),0)/data.length).toFixed(1);
+    document.getElementById('s-avg').textContent = avg;
+    const best = Math.max(...data.map(r=>r.score_total||0));
+    document.getElementById('s-best').textContent = best;
+    // Recent
+    const recentSection = document.getElementById('recent-section');
+    recentSection.style.display = 'block';
+    const list = document.getElementById('recent-list');
+    list.innerHTML = '';
+    data.slice(0,3).forEach(s => {
+      const d = new Date(s.created_at);
+      const score = s.score_total||0;
+      const color = score>=8?'#43A047':score>=6?'#FB8C00':'#E53935';
+      list.innerHTML += `<div class="session-card">
+        <div class="session-dot" style="background:${color}"></div>
+        <div class="session-info"><div class="session-topic">Bài luyện nói</div><div class="session-meta">${d.toLocaleDateString('vi-VN')}</div></div>
+        <div class="session-score" style="color:${color}">${score}</div>
+      </div>`;
+    });
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════
+// BOOK → LEVEL → UNIT
+// ══════════════════════════════════════
+function selectBook(book) {
+  currentBook = book;
+  if (book.isPicture || book.code==='picture') { loadPictures(); return; }
+  if (!book.levels || !book.levels.length) { toast('⚠️ Sách này chưa có nội dung!'); return; }
+  document.getElementById('lv-title').textContent = book.name;
+  document.getElementById('lv-sub').textContent = book.name_vi||'Chọn level';
+  renderLevels(book.levels, book.color||'#2196F3');
+  showScreen('screen-levels');
+}
+
+function renderLevels(levels, color) {
+  const list = document.getElementById('lv-list');
+  list.innerHTML = '';
+  const colors = ['#E53935','#FB8C00','#43A047','#1E88E5','#8E24AA','#E91E63','#5D4037'];
+  levels.forEach((lv, i) => {
+    const el = document.createElement('div');
+    el.className = 'level-item';
+    el.innerHTML = `
+      <div class="level-badge" style="background:${colors[i%colors.length]}">${(lv.label||lv.code).replace(/[^0-9A-Za-z]/g,'').slice(0,2)||'L'+(i+1)}</div>
+      <div class="level-info">
+        <div class="level-name">${lv.label||lv.code}</div>
+        <div class="level-detail">${lv.units?lv.units+' units':'Nhiều chủ đề'}</div>
+      </div>
+      <span style="color:var(--muted);font-size:1.2rem;">›</span>`;
+    el.onclick = () => selectLevel(lv);
+    list.appendChild(el);
+  });
+}
+
+async function selectLevel(lv) {
+  currentLevel = lv;
+  document.getElementById('un-title').textContent = lv.label||lv.code;
+  document.getElementById('un-sub').textContent = currentBook.name;
+  showLoad(true);
+  
+  // Try to load from Supabase curriculum_extras first
+  let units = [];
+  try {
+    const {data} = await sb.from('curriculum_extras').select('*')
+      .eq('book', currentBook.code).eq('level_id', lv.code)
+      .order('unit_number');
+    if (data && data.length) {
+      units = data.map(u => ({
+        n: u.unit_number,
+        topic: u.unit_number==='Starter' ? 'Unit Starter — Hello!' : 'Unit '+u.unit_number,
+        kw: Array.isArray(u.vocab_list)?u.vocab_list.slice(0,6).join(', '):'',
+        vocab: u.vocab_list||[], sentences: u.sample_sentences||[], prompts: u.speaking_prompts||[],
+        hasContent: true, dbId: u.id, wwLinks: u.wordwall_links||[], vocabImages: u.vocab_images||{}
+      }));
+      // Sort: Starter first, then numerically 1,2,3...
+      units.sort((a,b) => {
+        if(a.n==='Starter') return -1;
+        if(b.n==='Starter') return 1;
+        return (parseInt(a.n)||0) - (parseInt(b.n)||0);
+      });
+      console.log('Units from DB:', units.map(u=>u.n));
+    }
+  } catch(e) { console.error('selectLevel error:', e); }
+
+  // If DB has data but missing unit 1, fill from hardcoded
+  if (units.length > 0) {
+    const hasUnit1 = units.some(u => u.n === '1' || u.n === 1);
+    if (!hasUnit1) {
+      console.warn('Unit 1 missing from DB, checking hardcoded...');
+      const book = BOOKS_DEFAULT.find(b => b.code === currentBook.code);
+      const level = book?.levels?.find(l => l.code === lv.code);
+      if (level) {
+        const fallbackUnits = generateFallbackUnits(level);
+        const unit1 = fallbackUnits.find(u => String(u.n) === '1');
+        if (unit1) {
+          units.splice(1, 0, unit1); // Insert after Starter
+          console.log('Added Unit 1 from hardcoded fallback');
+        }
+      }
+    }
+  }
+
+  // Fallback to hardcoded if no DB content
+  if (!units.length) units = generateFallbackUnits(lv);
+
+  showLoad(false);
+  renderUnits(units);
+  showScreen('screen-units');
+}
+
+function generateFallbackUnits(lv) {
+  const count = lv.units || 10;
+  const units = [];
+  if (lv.code === 'topics_all') {
+    const topics = [
+      {n:'🐾',t:'Animals',kw:'pets, wild animals, favourite animal'},
+      {n:'🍎',t:'Food & Drink',kw:'favourite food, taste, healthy eating'},
+      {n:'🌈',t:'Colors & Shapes',kw:'describe objects, rainbow colours'},
+      {n:'👨‍👩‍👧',t:'Family',kw:'family members, jobs, describe'},
+      {n:'🏠',t:'My House',kw:'rooms, furniture, describe home'},
+      {n:'🏫',t:'School Life',kw:'subjects, teachers, school activities'},
+      {n:'⚽',t:'Sports & Games',kw:'play, like, good at, favourite sport'},
+      {n:'🎉',t:'Festivals',kw:'Tet, Christmas, birthday, celebrate'},
+      {n:'🌦',t:'Weather',kw:'sunny, rainy, cold, hot, forecast'},
+      {n:'🚌',t:'Transport',kw:'car, bus, plane, how to get to school'},
+      {n:'🛒',t:'Shopping',kw:'buy, price, How much?'},
+      {n:'🌍',t:'Countries & Travel',kw:'country, capital, travel, culture'},
+      {n:'💻',t:'Technology',kw:'phone, computer, internet, app'},
+      {n:'🌿',t:'Environment',kw:'recycle, protect, climate change'},
+      {n:'😊',t:'Feelings',kw:'happy, sad, excited, scared'},
+    ];
+    return topics.map(t=>({n:t.n,topic:t.t,kw:t.kw,vocab:[],sentences:[],prompts:[],hasContent:false}));
+  }
+  for (let i=0; i<count; i++) {
+    units.push({n:i===0&&lv.code.startsWith('faf')?'Starter':String(i+1), topic:'Unit '+(i===0&&lv.code.startsWith('faf')?'Starter':i+1), kw:'', vocab:[],sentences:[],prompts:[],hasContent:false});
+  }
+  return units;
+}
+
+function renderUnits(units) {
+  const list = document.getElementById('un-list');
+  list.innerHTML = '';
+  units.forEach(u => {
+    const el = document.createElement('div');
+    el.className = 'unit-item';
+    el.style.position = 'relative';
+    // Build display topic: use vocab-based topic name if available from DB
+    const displayTopic = u.hasContent && u.vocab && u.vocab.length > 0
+      ? (u.n==='Starter' ? 'Starter: Hello!' : `Unit ${u.n}`)
+      : u.topic;
+    el.innerHTML = `
+      <div class="unit-num-badge">${u.n}</div>
+      <div style="flex:1">
+        <div class="unit-topic">${displayTopic}</div>
+        ${u.kw?`<div class="unit-vocab">${u.kw}</div>`:''}
+      </div>
+      ${u.hasContent?'<span class="unit-has-content">✓</span>':''}`;
+    el.onclick = () => openUnitMode(u);
+    list.appendChild(el);
+  });
+}
+
+// ── UNIT MODE SCREEN ──
+function openUnitMode(unit) {
+  currentUnit = unit;
+  // Fill hero
+  document.getElementById('um-badge').textContent = `📚 ${currentLevel.label} · Unit ${unit.n}`;
+  document.getElementById('um-title').textContent = unit.topic;
+  document.getElementById('um-sub').textContent = unit.kw || 'Chọn hoạt động bên dưới!';
+  document.getElementById('um-level-label').textContent = currentBook.name;
+  document.getElementById('um-book-label').textContent = currentLevel.label||currentLevel.code;
+  // Vocab chips
+  const chips = document.getElementById('um-vocab-chips');
+  chips.innerHTML = '';
+  (unit.vocab||[]).slice(0,6).forEach(w => {
+    chips.innerHTML += `<span class="uvp-chip">${w}</span>`;
+  });
+  // Load Wordwall links
+  loadWWLinks(unit);
+  // Hide ww section initially
+  document.getElementById('ww-section').style.display = 'none';
+  showScreen('screen-unit-mode');
+}
+
+async function loadWWLinks(unit) {
+  const list = document.getElementById('ww-list');
+  const countEl = document.getElementById('um-ww-count');
+  try {
+    // Use pre-loaded links from selectLevel if available
+    let links = (unit.wwLinks && unit.wwLinks.length) ? unit.wwLinks : [];
+    if (!links.length) {
+      const {data} = await sb.from('curriculum_extras')
+        .select('wordwall_links')
+        .eq('book', currentBook.code)
+        .eq('level_id', currentLevel.code||currentLevel.label)
+        .eq('unit_number', String(unit.n))
+        .maybeSingle();
+      links = data?.wordwall_links || [];
+    }
+    const _unused = null; // keep try block open
+    countEl.textContent = links.length + ' bài tập';
+    if (!links.length) {
+      list.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);"><div style="font-size:1.8rem;margin-bottom:8px;">📭</div><div style="font-size:0.85rem;">Giáo viên chưa thêm bài tập cho unit này!</div></div>`;
+      return;
+    }
+    const icons = {'Mầm non':'🌸','Tiểu học':'📚','Trắc nghiệm':'📝','Sắp xếp câu':'🔤','Từ vựng':'🃏','Nghe':'🎧','Nói':'🎤','default':'🎯'};
+    // Group by category
+    const groups = {};
+    links.forEach(lk => {
+      const cat = lk.category || lk.group || 'Bài tập';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(lk);
+    });
+    // Render grouped
+    list.innerHTML = Object.entries(groups).map(([cat, items]) => `
+      <div style="margin-bottom:10px;">
+        <div style="font-size:0.75rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;padding:0 2px;">
+          ${icons[cat]||'🎯'} ${cat}
+        </div>
+        ${items.map(lk => `
+          <div class="ww-item" onclick="openWWEmbed('${escHtml(lk.url)}','${escHtml(lk.name)}')">
+            <div class="ww-icon">${icons[cat]||'🎯'}</div>
+            <div class="ww-info">
+              <div class="ww-name">${escHtml(lk.name)}</div>
+              <div class="ww-type">${cat} · Nhấn để chơi</div>
+            </div>
+            <button class="ww-play" onclick="event.stopPropagation();openWWEmbed('${escHtml(lk.url)}','${escHtml(lk.name)}')">▶ Chơi</button>
+          </div>`).join('')}
+      </div>`).join('');
+  } catch(e) {
+    countEl.textContent = '0 bài tập';
+  }
+}
+
+function escHtml(s) { return (s||'').replace(/'/g,"\'").replace(/"/g,'&quot;'); }
+
+function showVocabSection() {
+  document.getElementById('ww-section').style.display = 'block';
+  document.getElementById('ww-section').scrollIntoView({behavior:'smooth'});
+}
+function hideVocabSection() {
+  document.getElementById('ww-section').style.display = 'none';
+}
+function openWWEmbed(url, name) {
+  // Convert Wordwall share URL to embed URL
+  let embedUrl = url;
+  if (url.includes('wordwall.net/resource/')) {
+    embedUrl = url.replace('wordwall.net/resource/', 'wordwall.net/embed/');
+  } else if (url.includes('wordwall.net/play/')) {
+    embedUrl = url; // already playable
+  }
+  document.getElementById('ww-embed-title').textContent = name || 'Bài tập';
+  document.getElementById('ww-embed-iframe').src = embedUrl;
+  document.getElementById('ww-embed-wrap').classList.add('show');
+}
+function closeWWEmbed() {
+  document.getElementById('ww-embed-wrap').classList.remove('show');
+  document.getElementById('ww-embed-iframe').src = '';
+}
+function startSpeaking() {
+  initChat();
+}
+
+
+// ══════════════════════════════════════
+// PICTURE SPEAKING
+// ══════════════════════════════════════
+async function loadPictures() {
+  showLoad(true);
+  showScreen('screen-pictures');
+  const grid = document.getElementById('pic-grid');
+  grid.innerHTML = '';
+  try {
+    const {data} = await sb.from('picture_cards').select('*').eq('is_active',true).order('created_at',{ascending:false});
+    showLoad(false);
+    if (!data||!data.length) { document.getElementById('pic-empty').style.display='block'; return; }
+    data.forEach(pic => {
+      const card = document.createElement('div');
+      card.className = 'pic-card';
+      const questions = typeof pic.guiding_questions==='string'?JSON.parse(pic.guiding_questions||'[]'):pic.guiding_questions||[];
+      const vocab = typeof pic.vocab_hints==='string'?JSON.parse(pic.vocab_hints||'[]'):pic.vocab_hints||[];
+      card.innerHTML = `
+        ${pic.image_url?`<img src="${pic.image_url}" class="pic-img" alt="${pic.title}" onerror="this.parentElement.querySelector('.pic-img-placeholder').style.display='flex';this.style.display='none'">`:''}
+        <div class="pic-img-placeholder" style="${pic.image_url?'display:none':''}">🖼️</div>
+        <div class="pic-info">
+          <div class="pic-title">${pic.title}</div>
+          <div class="pic-sub">${pic.title_vi||''} · ${pic.topic||''}</div>
+        </div>`;
+      card.onclick = () => startPictureSession(pic, questions, vocab);
+      grid.appendChild(card);
+    });
+  } catch(e) { showLoad(false); document.getElementById('pic-empty').style.display='block'; }
+}
+
+function startPictureSession(pic, questions, vocab) {
+  currentUnit = {n:'🖼️', topic:pic.title, kw:pic.topic||'', vocab:vocab, sentences:[], prompts:questions, isPicture:true, picData:pic};
+  currentLevel = {code:'picture', label:'Picture Speaking'};
+  currentBook = {code:'picture', name:'Picture Speaking'};
+  initChat();
+}
+
+// ══════════════════════════════════════
+// CHAT SESSION
+// ══════════════════════════════════════
+function startSession(unit) {
+  currentUnit = unit;
+  initChat();
+}
+
+
+
+// ══ INPUT & SEND ══
+function onInput() {
+  const t = document.getElementById('transcript').innerText.trim();
+  currentText = t;
+  document.getElementById('send-btn').disabled = !t;
+}
+
+function sendMsg() {
+  const text = currentText.trim();
+  if (!text) return;
+  addBubble('user', text);
+  document.getElementById('transcript').innerText = '';
+  document.getElementById('send-btn').disabled = true;
+  currentText = '';
+  callClaude(text);
+}
+
+// ══ SPEECH RECOGNITION ══
+function initSpeech() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    speechOK = false;
+    document.getElementById('mic-lbl').textContent = 'Gõ câu trả lời';
+    document.getElementById('speech-hint').textContent = '⚠️ Safari chưa hỗ trợ mic. Hãy gõ câu trả lời hoặc dùng Chrome!';
+    document.getElementById('mic-btn').style.background = '#90A4AE';
+    document.getElementById('mic-lbl').textContent = '⌨️ Gõ câu trả lời';
+    document.getElementById('transcript').setAttribute('data-ph','Gõ câu trả lời tại đây...');
+    return;
+  }
+  speechOK = true;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  document.getElementById('speech-hint').textContent = isIOS 
+    ? '💡 iPhone: Gõ câu trả lời hoặc dùng Chrome để nói'
+    : '💡 Chrome/Android — nói rõ, chậm để nhận diện tốt';
+  if (recognition) { try { recognition.abort(); } catch(e) {} }
+  recognition = new SR();
+  recognition.lang = 'en-US';
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.onresult = e => {
+    const t = Array.from(e.results).map(r=>r[0].transcript).join('');
+    document.getElementById('transcript').innerText = t;
+    currentText = t;
+    if (e.results[e.results.length-1].isFinal) document.getElementById('send-btn').disabled = false;
+  };
+  recognition.onend = () => setMicState(false);
+  recognition.onerror = e => {
+    setMicState(false);
+    if (e.error === 'service-not-allowed' || e.error === 'not-allowed') {
+      toast('⚠️ Safari không hỗ trợ mic. Hãy gõ câu trả lời!');
+      speechOK = false;
+      document.getElementById('mic-btn').style.background = '#90A4AE';
+      document.getElementById('mic-lbl').textContent = '⌨️ Gõ câu trả lời';
+    } else if (e.error !== 'no-speech') {
+      toast('❌ Lỗi mic: ' + e.error);
+    }
+  };
+}
+
+function toggleMic() {
+  unlockTTS(); // unlock iOS audio on first interaction
+  if (!speechOK) { toast('⚠️ Dùng Chrome để nói! Hoặc gõ câu trả lời.'); return; }
+  if (isRecording) { recognition.stop(); }
+  else {
+    currentText = '';
+    document.getElementById('transcript').innerText = '';
+    recognition.start();
+    setMicState(true);
+  }
+}
+
+function setMicState(on) {
+  isRecording = on;
+  document.getElementById('mic-btn').classList.toggle('on', on);
+  document.getElementById('mic-lbl').textContent = on ? '● Đang nghe...' : 'Nhấn để nói';
+  document.getElementById('transcript').classList.toggle('active', on);
+}
+
+function initChat() {
+  chatHistory = []; sessionStart = Date.now(); sessionId = null;
+  document.getElementById('chat-msgs').innerHTML = '';
+  document.getElementById('chat-topic').textContent = `${currentLevel.label||currentLevel.code} · ${currentUnit.topic}`;
+  document.getElementById('transcript').innerText = '';
+  document.getElementById('send-btn').disabled = true;
+  [1,2,3,4,5].forEach(i => document.getElementById('cs'+i).classList.remove('lit'));
+  // Show vocab hints if available
+  const vh = document.getElementById('vocab-hint');
+  if (currentUnit.vocab && currentUnit.vocab.length > 0) {
+    vh.style.display = 'flex';
+    vh.innerHTML = '<span style="font-size:0.72rem;color:var(--muted);font-weight:700;margin-right:4px;">💡</span>' +
+      currentUnit.vocab.slice(0,8).map(w=>`<span class="vocab-chip">${w}</span>`).join('');
+  } else { vh.style.display = 'none'; }
+  showScreen('screen-chat');
+  initSpeech();
+  initTTS();
+  callClaude(buildSystemPrompt(), true);
+}
+
+
+// ══════════════════════════════════════
+// SESSION ENGINE — Smart Sunny
+// ══════════════════════════════════════
+let fcWords = [];       // shuffled vocab list for flashcards
+let fcIndex = 0;        // current flashcard index
+let sessionTurns = 0;   // total turns spoken
+let correctCount = 0;   // approximate correct answers
+let difficultyLevel = 1; // 1=easy, 2=medium, 3=advanced
+let prevUnitVocab = []; // vocab from previous unit for review
+let studentEnergyScore = 10; // drops if responses get shorter
+
+// Vietnamese translations for common words (quick lookup)
+const VI_MAP = {
+  pen:'bút mực',rubber:'tẩy',pencil:'bút chì',ruler:'thước',book:'quyển sách',bag:'cặp sách',
+  door:'cửa',window:'cửa sổ',doll:'búp bê',ball:'bóng',teddy:'gấu bông',car:'xe hơi',
+  kite:'diều',bike:'xe đạp',train:'tàu hỏa',cat:'con mèo',dog:'con chó',fish:'con cá',
+  bird:'chim',rabbit:'thỏ',apple:'táo',banana:'chuối',milk:'sữa',water:'nước',rice:'cơm',
+  bread:'bánh mì',teacher:'giáo viên',doctor:'bác sĩ',mother:'mẹ',father:'ba',sister:'chị/em gái',
+  brother:'anh/em trai',red:'đỏ',blue:'xanh dương',green:'xanh lá',yellow:'vàng',
+  happy:'vui',sad:'buồn',big:'to',small:'nhỏ',run:'chạy',jump:'nhảy',swim:'bơi',fly:'bay',
+  school:'trường học',home:'nhà',park:'công viên',kitchen:'bếp',bedroom:'phòng ngủ',
+  elephant:'voi',giraffe:'hươu cao cổ',monkey:'khỉ',tiger:'hổ',lion:'sư tử',
+  sandwich:'bánh sandwich',lunch:'bữa trưa',dinner:'bữa tối',
+};
+
+// Emoji fallbacks for images
+const EMOJI_MAP = {
+  pen:'🖊️',rubber:'🧹',pencil:'✏️',ruler:'📏',book:'📚',bag:'🎒',door:'🚪',window:'🪟',
+  doll:'🪆',ball:'⚽',teddy:'🧸',car:'🚗',kite:'🪁',bike:'🚲',train:'🚂',
+  cat:'🐱',dog:'🐶',fish:'🐟',bird:'🐦',rabbit:'🐰',apple:'🍎',banana:'🍌',
+  milk:'🥛',water:'💧',rice:'🍚',bread:'🍞',teacher:'👩‍🏫',doctor:'👨‍⚕️',
+  mother:'👩',father:'👨',sister:'👧',brother:'👦',red:'🔴',blue:'🔵',green:'🟢',yellow:'🟡',
+  happy:'😊',sad:'😢',big:'🐘',small:'🐭',run:'🏃',jump:'🤸',swim:'🏊',fly:'✈️',
+  school:'🏫',home:'🏠',park:'🌳',kitchen:'🍳',bedroom:'🛏️',
+  elephant:'🐘',giraffe:'🦒',monkey:'🐵',tiger:'🐯',lion:'🦁',
+  sandwich:'🥪',lunch:'🍱',dinner:'🍽️',
+};
+
+function buildSystemPrompt() {
+  const s = student;
+  const age = calcAge(s.birth_date);
+  const vocab = currentUnit.vocab?.length ? currentUnit.vocab : [];
+  const sentences = currentUnit.sentences?.length ? currentUnit.sentences : [];
+  const prompts = currentUnit.prompts?.length ? currentUnit.prompts : [];
+
+  // Build review context from previous unit
+  const reviewCtx = prevUnitVocab.length > 0
+    ? `\n\nQUICK REVIEW: Start by briefly reviewing 1-2 words from the previous lesson: ${prevUnitVocab.slice(0,3).join(', ')}. Just 1 quick question, then move on.`
+    : '';
+
+  const diffCtx = difficultyLevel===1
+    ? 'Student seems to be a beginner or warming up — keep questions very simple, one word answers OK.'
+    : difficultyLevel===2
+    ? 'Student is doing well — ask for full sentences, expand vocabulary.'
+    : 'Student is performing excellently — challenge with open questions, storytelling, opinions.';
+
+  const picContext = currentUnit.isPicture
+    ? `PICTURE MODE: Title "${currentUnit.topic}". Guide student to describe what they see. Questions: ${prompts.join(' | ')}`
+    : '';
+
+  return `You are Sunny, a fun English speaking coach for Vietnamese children (age: ${age}, name: ${(s.full_name||s.username).split(' ').pop()}).
+
+LESSON: ${currentBook.name} · ${currentLevel.label} · Unit "${currentUnit.topic}"
+VOCABULARY LIST: ${vocab.join(', ')}
+SENTENCE PATTERNS: ${sentences.join(' | ')||'free talk'}
+
+STRICT RULES — follow exactly:
+1. Ask about ONE word at a time. Say "What's this?" and name the word you're asking about clearly.
+2. When student answers CORRECTLY (says the right word) → say "Brilliant! ✅" and move to NEXT word. NEVER ask about the same word again.
+3. When student answers WRONGLY → give ONE hint, try again once, then reveal the answer and move on.
+4. NEVER include stage directions like "(point to...)" or "(if they...)" in your response — just speak naturally to the student.
+5. Ask words in RANDOM order — never the same word twice in a row. Vocabulary pool: ${vocab.slice(0,8).join(', ')}.
+6. Keep responses SHORT — max 2-3 sentences per turn.
+7. Be encouraging, use emojis 🌟✨🎉, speak like a fun teacher.
+8. After every word, say which word comes next so the student knows what to expect.
+
+Start with a warm greeting and ask about a RANDOM word from the list!`;
+}
+
+// ══ OPENROUTER API CONFIG ══
+const OR_URL = 'https://efk-claude-proxy.phonglan6883.workers.dev';
+const OR_MODEL = 'nvidia/nemotron-3-super-120b-a12b:free';
+
+async function callClaude(userText, isFirst=false) {
+  showThinking();
+  if (isFirst) {
+    chatMessages = [{role:'user', content:userText}];
+  } else {
+    chatMessages.push({role:'user', content:userText});
+  }
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514', max_tokens:800, messages:chatMessages})
+    });
+    const data = await res.json();
+    hideThinking();
+    const reply = data.content?.map(c=>c.text||'').join('') || 'Oops! Thử lại nhé 😊';
+    chatMessages.push({role:'assistant', content:reply});
+    addMsg('sunny', reply);
+    // Update stars based on turn count
+    const turns = chatMessages.filter(m=>m.role==='user' && m !== chatMessages[0]).length;
+    updateChatStars(Math.min(5, Math.ceil(turns * 0.8)));
+  } catch(e) {
+    hideThinking();
+    addMsg('sunny','⚠️ Không kết nối được. Thử lại nhé! 😊');
+  }
+}
+
+function addMsg(role, text) {
+  const msgs = document.getElementById('chat-msgs');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.textContent = text;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showThinking() {
+  const msgs = document.getElementById('chat-msgs');
+  const el = document.createElement('div');
+  el.className = 'thinking'; el.id = 'thinking';
+  el.innerHTML = '<span></span><span></span><span></span>';
+  msgs.appendChild(el);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+function hideThinking() { document.getElementById('thinking')?.remove(); }
+
+function updateChatStars(n) {
+  for (let i=1;i<=5;i++) document.getElementById('cs'+i).classList.toggle('lit', i<=n);
+}
+
+function sendMessage() {
+  const text = currentTranscript.trim();
+  if (!text) return;
+  addMsg('user', text);
+  clearTranscript();
+  document.getElementById('send-btn').disabled = true;
+  callClaude(text);
+}
+
+function onTranscriptInput() {
+  const t = document.getElementById('transcript').innerText.trim();
+  currentTranscript = t;
+  document.getElementById('send-btn').disabled = !t;
+}
+
+function clearTranscript() {
+  currentTranscript = '';
+  const el = document.getElementById('transcript');
+  el.innerText = '';
+  document.getElementById('send-btn').disabled = true;
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key==='Enter' && !e.shiftKey && document.getElementById('screen-chat').classList.contains('active')) {
+    if (!document.getElementById('send-btn').disabled) { e.preventDefault(); sendMessage(); }
+  }
+});
+
+function confirmLeaveChat() {
+  if (chatMessages.length > 2) {
+    if (confirm('Bạn muốn kết thúc bài luyện này không?')) endSession();
+  } else {
+    showScreen(currentBook === 'picture' ? 'screen-pictures' : 'screen-units');
+  }
+}
+
+function practiceAgain() {
+  showScreen('screen-home');
+}
+
+// ═══════════════════════════════════════
+// SPEECH RECOGNITION
+// ═══════════════════════════════════════
+function initSpeech() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    speechOK = false;
+    document.getElementById('mic-btn').style.opacity = '0.5';
+    document.getElementById('mic-lbl').textContent = 'Gõ câu trả lời';
+    document.getElementById('speech-hint').textContent = '⚠️ Dùng Chrome để nói được. Hiện tại hãy gõ câu trả lời.';
+    return;
+  }
+  speechOK = true;
+  document.getElementById('speech-hint').textContent = '💡 Dùng Chrome/Android để nói tốt nhất';
+  recognition = new SR();
+  recognition.lang = 'en-US';
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.onresult = e => {
+    const t = Array.from(e.results).map(r=>r[0].transcript).join('');
+    document.getElementById('transcript').innerText = t;
+    currentTranscript = t;
+    if (e.results[e.results.length-1].isFinal) document.getElementById('send-btn').disabled = false;
+  };
+  recognition.onend = () => setMicState(false);
+  recognition.onerror = e => { setMicState(false); if(e.error!=='no-speech') toast('❌ Lỗi mic: '+e.error); };
+}
+
+function toggleMic() {
+  if (!speechOK) { toast('⚠️ Hãy gõ câu trả lời nhé!'); return; }
+  if (isRecording) { recognition.stop(); }
+  else { currentTranscript=''; document.getElementById('transcript').innerText=''; recognition.start(); setMicState(true); }
+}
+
+function setMicState(rec) {
+  isRecording = rec;
+  const btn = document.getElementById('mic-btn');
+  btn.classList.toggle('recording', rec);
+  document.getElementById('mic-lbl').textContent = rec ? '● Đang nghe...' : 'Nhấn để nói';
+  document.getElementById('transcript').classList.toggle('listening', rec);
+}
+
+// ═══════════════════════════════════════
+// END SESSION & EVALUATION
+// ═══════════════════════════════════════
+async function endSession() {
+  if (chatMessages.length < 3) { toast('Hãy luyện thêm một chút nữa nhé! 😊'); return; }
+  showLoading(true);
+  const duration = Math.floor((Date.now() - sessionStartTime) / 1000);
+  const transcript = chatMessages.filter(m=>m.role!=='user'||m!==chatMessages[0]);
+  // Ask Claude to evaluate
+  const evalPrompt = buildEvalPrompt(transcript);
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:1200,
+        messages:[{role:'user', content:evalPrompt}]
+      })
+    });
+    const data = await res.json();
+    const raw = data.content?.map(c=>c.text||'').join('') || '';
+    const evalData = parseEval(raw);
+    const totalScore = ((evalData.fluency + evalData.vocab + evalData.grammar + evalData.confidence) / 4).toFixed(1);
+    // Save to Supabase
+    const sessionRecord = {
+      student_id: currentStudent.id,
+      book: currentBook, level_id: currentLevel.id, level_label: currentLevel.label,
+      unit_number: String(currentUnit.n), unit_topic: currentUnit.topic,
+      mode: currentUnit.pictureMode ? 'picture' : 'conversation',
+      transcript: chatMessages.slice(1),
+      turn_count: chatMessages.filter(m=>m.role==='user').length - 1,
+      duration_seconds: duration,
+      score_fluency: evalData.fluency, score_vocab: evalData.vocab,
+      score_grammar: evalData.grammar, score_confidence: evalData.confidence,
+      score_total: parseFloat(totalScore),
+      ai_comment: evalData.comment_en, ai_comment_vi: evalData.comment_vi,
+      strengths: evalData.strengths.join('|'),
+      improvements: evalData.improvements.join('|'),
+      completed: true
+    };
+    try {
+      const {data:saved} = await sb.from('speaking_sessions').insert(sessionRecord).select().single();
+      if (saved) currentSessionId = saved.id;
+    } catch(e) {}
+    showLoading(false);
+    renderEvaluation({...evalData, total: totalScore, duration});
+    showScreen('screen-eval');
+  } catch(e) {
+    showLoading(false);
+    toast('⚠️ Lỗi kết nối. Vui lòng thử lại!');
+  }
+}
+
+function buildEvalPrompt(transcript) {
+  const convText = transcript.map(m=>`${m.role==='user'?'Student':'Sunny'}: ${m.content}`).join('\n');
+  return `You are an English teacher evaluating a young Vietnamese student's speaking practice session.
+
+CONVERSATION TRANSCRIPT:
+${convText}
+
+Please evaluate the student and respond ONLY with this exact JSON format (no markdown, no extra text):
+{
+  "fluency": <1-10>,
+  "vocab": <1-10>,
+  "grammar": <1-10>,
+  "confidence": <1-10>,
+  "comment_en": "<2-3 encouraging sentences in English about their performance>",
+  "comment_vi": "<2-3 encouraging sentences in Vietnamese - nhận xét bằng tiếng Việt cho phụ huynh>",
+  "strengths": ["<strength 1>", "<strength 2>", "<strength 3>"],
+  "improvements": ["<area to improve 1>", "<area to improve 2>"]
+}
+
+Be encouraging, age-appropriate, and specific. Vietnamese students aged 4-12.`;
+}
+
+function parseEval(raw) {
+  try {
+    const clean = raw.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+    return {
+      fluency: Math.min(10, Math.max(1, parseInt(parsed.fluency)||7)),
+      vocab: Math.min(10, Math.max(1, parseInt(parsed.vocab)||7)),
+      grammar: Math.min(10, Math.max(1, parseInt(parsed.grammar)||7)),
+      confidence: Math.min(10, Math.max(1, parseInt(parsed.confidence)||7)),
+      comment_en: parsed.comment_en || 'Great effort today!',
+      comment_vi: parsed.comment_vi || 'Con đã cố gắng rất tốt hôm nay!',
+      strengths: Array.isArray(parsed.strengths) ? parsed.strengths : ['Good effort','Nice vocabulary'],
+      improvements: Array.isArray(parsed.improvements) ? parsed.improvements : ['Keep practising']
+    };
+  } catch(e) {
+    return {fluency:7,vocab:7,grammar:7,confidence:8,comment_en:'Great effort today!',comment_vi:'Con đã cố gắng rất tốt!',strengths:['Good effort','Nice try'],improvements:['Keep practising daily']};
+  }
+}
+
+function renderEvaluation(ev) {
+  // Student info
+  const s = currentStudent;
+  document.getElementById('eval-name').textContent = s.full_name || s.username;
+  document.getElementById('eval-class').textContent = s.class_name ? `Lớp ${s.class_name}` : '';
+  document.getElementById('eval-date').textContent = new Date().toLocaleDateString('vi-VN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('eval-unit-badge').textContent = `📚 ${currentLevel.label} · ${currentUnit.topic}`;
+  // Avatar
+  const avEl = document.getElementById('eval-avatar');
+  if (s.avatar_url) {
+    avEl.innerHTML = `<img src="${s.avatar_url}" alt="avatar">`;
+  } else {
+    avEl.textContent = s.avatar_emoji || '🌟';
+  }
+  // Total
+  document.getElementById('eval-total').textContent = ev.total;
+  const stars = Math.round(parseFloat(ev.total) / 2);
+  document.getElementById('eval-stars-display').textContent = '⭐'.repeat(stars) + '☆'.repeat(5-stars);
+  // Score grid
+  const grid = document.getElementById('score-grid');
+  const scores = [
+    {label:'Fluency\n(Lưu loát)', val:ev.fluency, color:SCORE_COLORS.Fluency},
+    {label:'Vocabulary\n(Từ vựng)', val:ev.vocab, color:SCORE_COLORS.Vocabulary},
+    {label:'Grammar\n(Ngữ pháp)', val:ev.grammar, color:SCORE_COLORS.Grammar},
+    {label:'Confidence\n(Tự tin)', val:ev.confidence, color:SCORE_COLORS.Confidence}
+  ];
+  grid.innerHTML = '';
+  scores.forEach(sc => {
+    const div = document.createElement('div');
+    div.className = 'score-item';
+    div.innerHTML = `<div class="score-label">${sc.label}</div>
+      <div class="score-bar-wrap"><div class="score-bar-fill" style="width:0%;background:${sc.color}" data-target="${sc.val*10}%"></div></div>
+      <div class="score-num" style="color:${sc.color}">${sc.val}</div>`;
+    grid.appendChild(div);
+  });
+  // Animate bars
+  setTimeout(() => {
+    grid.querySelectorAll('.score-bar-fill').forEach(b => {
+      b.style.width = b.dataset.target;
+    });
+  }, 100);
+  // Comments
+  document.getElementById('eval-comment-en').textContent = ev.comment_en;
+  document.getElementById('eval-comment-vi').textContent = ev.comment_vi;
+  // Strengths & improvements
+  const strEl = document.getElementById('eval-strengths');
+  strEl.innerHTML = '<span style="font-size:0.75rem;font-weight:700;color:var(--green-dark);margin-right:4px;">✅ Điểm mạnh:</span>';
+  ev.strengths.forEach(s => { strEl.innerHTML += `<span class="tag tag-good">${s}</span>`; });
+  const impEl = document.getElementById('eval-improvements');
+  impEl.innerHTML = '<span style="font-size:0.75rem;font-weight:700;color:var(--yellow-dark);margin-right:4px;">📈 Cần cải thiện:</span>';
+  ev.improvements.forEach(s => { impEl.innerHTML += `<span class="tag tag-improve">${s}</span>`; });
+}
+
+async function saveTeacherNote() {
+  const note = document.getElementById('teacher-note').value.trim();
+  if (!note) return;
+  if (currentSessionId) {
+    try {
+      await sb.from('speaking_sessions').update({teacher_note:note}).eq('id', currentSessionId);
+      toast('✅ Đã lưu nhận xét!');
+    } catch(e) { toast('✅ Đã lưu (local)!'); }
+  } else {
+    toast('✅ Đã lưu!');
+  }
+}
+
+// ─── Enter key in login ───
+document.getElementById('li-pass').addEventListener('keydown', e => {
+  if (e.key==='Enter') doLogin();
+});
+</script>
+</body>
+</html>
