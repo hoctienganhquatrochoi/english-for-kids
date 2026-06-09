@@ -2,8 +2,10 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin – English for Kids</title>
+<title>Admin v3 – English for Kids</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
 // ── SINGLE EXTRACT (for modal) ──
 async function singleExtractOnly(){
@@ -28,6 +30,18 @@ Content: ${raw}`}]})
     document.getElementById('curr-prompts').value = (parsed.speaking_prompts||[]).join('\n');
     toast('✅ Đã trích xuất! Kiểm tra rồi nhấn Lưu.');
   }catch(e){toast('⚠️ Lỗi: '+e.message);}
+}
+
+
+// ── UNIT ACTION HELPER ──
+function unitAction(btn){
+  const id = btn.dataset.id;
+  const action = btn.dataset.action;
+  if(!id){alert('Error: no id'); return;}
+  if(action==='view') viewUnit(id);
+  else if(action==='edit') editExtra(id);
+  else if(action==='edit-close'){closeModal('modal-view-unit'); editExtra(id);}
+  else if(action==='del') deleteCurriculumExtra(id);
 }
 
 // ── ADD NEW UNIT ──
@@ -303,7 +317,6 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
             <select class="form-input" id="bulk-book">
               <option value="gs">Global Success</option>
               <option value="faf">Family &amp; Friends</option>
-              <option value="mamnon">Mầm non</option>
               <option value="mamnon">Mầm non</option>
               <option value="topics">Chủ đề tự do</option>
             </select>
@@ -810,9 +823,9 @@ function renderExtras(data){
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
               <div style="font-family:'Baloo 2',cursive;font-weight:800;font-size:1rem;color:${bookColors[g.book]||'#1565C0'};">Unit ${u.unit_number}</div>
               <div style="display:flex;gap:4px;">
-                <button title="Xem chi tiết" style="background:#E3F2FD;border:none;border-radius:6px;padding:4px 7px;cursor:pointer;font-size:0.8rem;" onclick="viewUnit('${u.id}')">👁️</button>
-                <button title="Sửa" style="background:#E8F5E9;border:none;border-radius:6px;padding:4px 7px;cursor:pointer;font-size:0.8rem;" onclick="editExtra('${u.id}')">✏️</button>
-                <button title="Xoá" style="background:#FFEBEE;border:none;border-radius:6px;padding:4px 7px;cursor:pointer;font-size:0.8rem;" onclick="deleteCurriculumExtra('${u.id}')">🗑️</button>
+                <button title="Xem chi tiết" style="background:#E3F2FD;border:none;border-radius:6px;padding:4px 7px;cursor:pointer;font-size:0.8rem;" data-id="${u.id}" data-action="view" onclick="unitAction(this)">👁️</button>
+                <button title="Sửa" style="background:#E8F5E9;border:none;border-radius:6px;padding:4px 7px;cursor:pointer;font-size:0.8rem;" data-id="${u.id}" data-action="edit" onclick="unitAction(this)">✏️</button>
+                <button title="Xoá" style="background:#FFEBEE;border:none;border-radius:6px;padding:4px 7px;cursor:pointer;font-size:0.8rem;" data-id="${u.id}" data-action="del" onclick="unitAction(this)">🗑️</button>
               </div>
             </div>
             <div style="font-size:0.75rem;color:var(--muted);margin-bottom:4px;">
