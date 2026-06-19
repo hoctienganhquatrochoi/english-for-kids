@@ -242,6 +242,23 @@ input::placeholder{color:#b0bcd4;font-weight:400}
     <button class="admin-logout" onclick="adminLogout()">Đăng xuất</button>
   </div>
 
+  <!-- Đổi mật khẩu -->
+  <div class="admin-card">
+    <div class="section-title">🔐 Đổi mật khẩu Admin</div>
+    <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+      <div style="flex:1;min-width:180px">
+        <label style="font-size:13px;font-weight:700;margin-bottom:6px;display:block">Mật khẩu mới</label>
+        <input type="password" id="new-password" placeholder="Nhập mật khẩu mới..." style="margin:0">
+      </div>
+      <div style="flex:1;min-width:180px">
+        <label style="font-size:13px;font-weight:700;margin-bottom:6px;display:block">Xác nhận lại</label>
+        <input type="password" id="confirm-password" placeholder="Nhập lại mật khẩu..." style="margin:0">
+      </div>
+      <button class="btn btn-admin btn-sm" style="height:48px;padding:0 20px;white-space:nowrap" onclick="changePassword()">💾 Lưu</button>
+    </div>
+    <div class="error-msg" id="pw-msg" style="margin-top:10px"></div>
+  </div>
+
   <!-- Tạo phiên mới -->
   <div class="admin-card">
     <div class="section-title">➕ Tạo phiên thi mới</div>
@@ -409,7 +426,7 @@ input::placeholder{color:#b0bcd4;font-weight:400}
 // =====================
 const SB_URL = 'https://ybqbweywgkbfidhlcjeh.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlicWJ3ZXl3Z2tiZmlkaGxjamVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4MTU3OTAsImV4cCI6MjA5NjM5MTc5MH0.DD1sJjgbIv82fgLk3SPxpGDg7ENo9jPO0nD63UVKN9g';
-const ADMIN_PASS = 'engforkids2025'; // ← GV ĐỔI MẬT KHẨU TẠI ĐÂY
+let ADMIN_PASS = 'engforkids2025'; // sẽ được load từ Supabase
 const TEST_ID = 'test1-on-he-lop3';
 
 const ANSWERS = {
@@ -473,6 +490,38 @@ function handleAdminLogin(){
 }
 
 function adminLogout(){showScreen('screen-login');}
+
+async function changePassword(){
+  const np=document.getElementById('new-password').value.trim();
+  const cp=document.getElementById('confirm-password').value.trim();
+  const msg=document.getElementById('pw-msg');
+  if(!np){showPwMsg('⚠️ Nhập mật khẩu mới!',false);return;}
+  if(np.length<6){showPwMsg('⚠️ Mật khẩu tối thiểu 6 ký tự!',false);return;}
+  if(np!==cp){showPwMsg('❌ Mật khẩu xác nhận không khớp!',false);return;}
+  const r=await fetch(`${SB_URL}/rest/v1/app_settings?key=eq.admin_password`,{
+    method:'PATCH',
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+    body:JSON.stringify({value:np})
+  });
+  if(r.ok){
+    ADMIN_PASS=np;
+    document.getElementById('new-password').value='';
+    document.getElementById('confirm-password').value='';
+    showPwMsg('✅ Đổi mật khẩu thành công!',true);
+  } else {
+    showPwMsg('❌ Lỗi khi lưu, thử lại!',false);
+  }
+}
+
+function showPwMsg(text,ok){
+  const el=document.getElementById('pw-msg');
+  el.textContent=text;
+  el.style.background=ok?'#F0FFF7':'#FEF2F2';
+  el.style.color=ok?'#15803d':'#b91c1c';
+  el.style.borderColor=ok?'var(--success)':'#FCA5A5';
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),4000);
+}
 
 function generateCode(){
   const labels=['LOC3A','LOC3B','LOC3C','LOC4A','LOC4B'];
@@ -703,9 +752,12 @@ function launchConfetti(){
 document.getElementById('input-code').addEventListener('input',function(){this.value=this.value.toUpperCase();});
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('screen-login').classList.contains('active'))handleLogin();});
 
-// Tạo bảng quiz_sessions nếu chưa có (silent)
+// Load mật khẩu admin từ Supabase
 (async()=>{
-  await fetch(`${SB_URL}/rest/v1/quiz_sessions?limit=1`,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}}).catch(()=>{});
+  try {
+    const r=await sbGet('app_settings','key=eq.admin_password');
+    if(r&&r.length)ADMIN_PASS=r[0].value;
+  } catch(e){}
 })();
 </script>
 </body>
