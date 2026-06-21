@@ -600,10 +600,12 @@ function buildTabs(){
   const ac=classes.find(c=>c.id===activeClass);
   if(ac) document.getElementById('class-info-bar').style.borderLeftColor=CLRMAP[ac.color]||'#9B59B6';
 }
+function toSlug(str){ return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\u0111/g,'d').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
 function selectClass(id){
   activeClass=id; page=1; buildTabs(); renderClassInfo(); renderLessons();
+  const c = classes.find(x=>x.id===id);
   const url = new URL(window.location);
-  url.searchParams.set('lop', id);
+  url.searchParams.set('lop', c ? toSlug(c.name) : id);
   window.history.replaceState({}, '', url);
 }
 function renderClassInfo(){
@@ -920,7 +922,7 @@ function checkDeepLink(){
   const params = new URLSearchParams(window.location.search);
   const classParam = params.get('lop');
   if(classParam){
-    const found = classes.find(c => c.id === classParam || c.name.includes(classParam));
+    const found = classes.find(c => c.id === classParam || toSlug(c.name) === classParam || c.name.toLowerCase().includes(classParam));
     if(found){ activeClass = found.id; buildTabs(); renderClassInfo(); renderLessons(); }
   }
 }
