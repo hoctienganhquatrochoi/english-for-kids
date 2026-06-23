@@ -1282,7 +1282,6 @@ function showZaloPopup(e){
   popup.style.display='flex';
   popup.onclick = function(ev){ if(ev.target===popup) popup.style.display='none'; }
 }
-</script>
 
 // ===== ACCOUNTS MANAGEMENT =====
 let studentAccounts = [], editingAccId = null;
@@ -1411,6 +1410,8 @@ function renderAccountList(){
     </div>`;
   }).join('');
 }
+
+</script>
 
 </body>
 </html>
