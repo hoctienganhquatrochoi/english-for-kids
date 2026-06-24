@@ -273,10 +273,13 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
     </div>
     <div style="margin-bottom:16px;">
       <label style="font-size:12px;font-weight:700;color:#666;">Mật khẩu</label>
-      <input id="login-password" type="password" placeholder="Nhập mật khẩu..." style="width:100%;padding:10px 12px;border:2px solid #e8e0ff;border-radius:10px;font-size:14px;font-family:'Nunito',sans-serif;box-sizing:border-box;margin-top:4px;outline:none;" onkeydown="if(event.key==='Enter') doLogin()"/>
+      <div style="position:relative;">
+  <input id="login-password" type="password" placeholder="Nhập mật khẩu..." style="width:100%;padding:10px 12px;padding-right:44px;border:2px solid #e8e0ff;border-radius:10px;font-size:14px;font-family:'Nunito',sans-serif;box-sizing:border-box;margin-top:4px;outline:none;" onkeydown="if(event.key==='Enter') doStudentLogin()"/>
+  <button type="button" onclick="togglePass('login-password','eye-student')" style="position:absolute;right:10px;top:55%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;" id="eye-student">👁️</button>
+</div>
     </div>
     <div id="login-error" style="display:none;background:#FEE2E2;color:#DC2626;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;margin-bottom:12px;"></div>
-    <button onclick="doLogin()" style="width:100%;background:#9B59B6;color:white;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">🔑 Đăng nhập</button>
+    <button onclick="doStudentLogin()" style="width:100%;background:#9B59B6;color:white;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">🔑 Đăng nhập</button>
     <button onclick="closeLoginModal()" style="width:100%;background:none;border:none;color:#aaa;font-size:13px;margin-top:10px;cursor:pointer;font-family:'Nunito',sans-serif;">Đóng</button>
   </div>
 </div>
@@ -1327,6 +1330,14 @@ function showZaloPopup(e){
 
 
 // ===== LOGIN SYSTEM =====
+
+function togglePass(inputId, btnId){
+  const inp = document.getElementById(inputId);
+  const btn = document.getElementById(btnId);
+  if(inp.type === 'password'){ inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁️'; }
+}
+
 let currentUser = null;
 
 function openLoginModal(){
@@ -1338,7 +1349,7 @@ function closeLoginModal(){
   document.getElementById('login-modal').style.display='none';
 }
 
-async function doLogin(){
+async function doStudentLogin(){
   const username = document.getElementById('login-username').value.trim();
   const password = document.getElementById('login-password').value.trim();
   if(!username||!password){ showLoginError('Vui lòng nhập đủ thông tin!'); return; }
