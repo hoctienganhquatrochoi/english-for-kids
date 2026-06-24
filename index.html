@@ -1410,7 +1410,7 @@ async function doStudentLogin(){
     if(!devices.includes(deviceId)){
       // New device - add it, keep only last 2
       devices.push(deviceId);
-      if(devices.length > 2) devices = devices.slice(-2); // keep newest 2, kick oldest
+      if(devices.length > 1) devices = devices.slice(-1); // keep newest 1, kick oldest
       // Save updated devices to DB
       await fetch(SUPA_URL+'/rest/v1/student_accounts?id=eq.'+acc.id, {
         method:'PATCH', headers: HEADERS,
