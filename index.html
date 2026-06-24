@@ -284,6 +284,27 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
   </div>
 </div>
 
+
+<!-- TEMPLATE MANAGER MODAL -->
+<div id="tpl-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9000;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:20px;padding:24px;max-width:420px;width:94%;max-height:85vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,0.25);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-weight:900;font-size:16px;color:#9B59B6;">⚙️ Quản lý template nút</div>
+      <button onclick="closeTplManager()" style="background:#f3f4f6;border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:14px;">✕</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:14px;">
+      <button onclick="switchTpl('mammon')" id="tpl-btn-mammon" style="flex:1;padding:7px;border:2px solid #FF6B9D;border-radius:8px;background:#FF6B9D;color:white;font-weight:800;font-size:12px;cursor:pointer;">🌱 Mầm Non</button>
+      <button onclick="switchTpl('tieuhoc')" id="tpl-btn-tieuhoc" style="flex:1;padding:7px;border:2px solid #e8e0ff;border-radius:8px;background:white;color:#9B59B6;font-weight:800;font-size:12px;cursor:pointer;">📚 Tiểu Học</button>
+    </div>
+    <div id="tpl-modal-list"></div>
+    <button onclick="addTplRow()" style="width:100%;margin-top:8px;background:#f3f0ff;color:#9B59B6;border:2px dashed #c4b5fd;border-radius:8px;padding:9px;font-weight:800;font-size:13px;cursor:pointer;">+ Thêm nút</button>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button onclick="saveTplEditor()" style="flex:1;background:#9B59B6;color:white;border:none;border-radius:10px;padding:10px;font-weight:800;font-size:13px;cursor:pointer;">💾 Lưu</button>
+      <button onclick="closeTplManager()" style="flex:1;background:#f3f4f6;color:#666;border:none;border-radius:10px;padding:10px;font-weight:700;font-size:13px;cursor:pointer;">Đóng</button>
+    </div>
+  </div>
+</div>
+
 <!-- ADMIN PANEL -->
 <div class="admin-overlay" id="admin-overlay">
   <div class="admin-panel">
@@ -371,6 +392,7 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
               <button type="button" onclick="loadTemplate('mammon')" style="background:#FF6B9D;color:white;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">🌱 Mầm Non</button>
               <button type="button" onclick="loadTemplate('tieuhoc')" style="background:#9B59B6;color:white;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">📚 Tiểu Học</button>
               <button type="button" onclick="loadTemplate('clear')" style="background:#e5e7eb;color:#555;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">🗑️ Xoá hết</button>
+              <button type="button" onclick="openTplManager()" style="background:#f0f9ff;color:#0369a1;border:2px solid #bae6fd;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">⚙️ Quản lý</button>
             </div>
             <div style="font-size:11px;color:#888;">Sau khi chọn template → có thể sửa tên, đổi link, thêm/xoá tự do</div>
           </div>
@@ -845,7 +867,6 @@ function apTab(btn){
   if(name==='docs'){ buildDocClassSel(); renderDocList(); }
   if(name==='accounts'){ loadAccounts(); renderAccountList(); buildAccClassChecks(); }
   if(name==='settings'){ 
-    loadTplEditor();
     const img=document.getElementById('banner-img');
     const prev=document.getElementById('banner-preview');
     if(prev && img) prev.src=img.src;
@@ -1413,16 +1434,39 @@ function hasAccess(classId){
 
 
 // ===== TEMPLATE EDITOR =====
+
+function openTplManager(){
+  document.getElementById('tpl-modal').style.display='flex';
+  switchTpl('mammon');
+}
+function closeTplManager(){
+  document.getElementById('tpl-modal').style.display='none';
+}
+function switchTpl(type){
+  // Update active button styles
+  ['mammon','tieuhoc'].forEach(t=>{
+    const btn = document.getElementById('tpl-btn-'+t);
+    if(t===type){ btn.style.background= t==='mammon'?'#FF6B9D':'#9B59B6'; btn.style.color='white'; btn.style.borderColor=t==='mammon'?'#FF6B9D':'#9B59B6'; }
+    else { btn.style.background='white'; btn.style.color='#666'; btn.style.borderColor='#e8e0ff'; }
+  });
+  // Store current type in hidden attr
+  document.getElementById('tpl-modal').dataset.type = type;
+  const items = editingTemplates[type] || [...(TEMPLATES[type]||[])];
+  editingTemplates[type] = [...items];
+  renderTplEditor(type, items);
+}
+
 let editingTemplates = {};
 
 function loadTplEditor(){
-  const type = document.getElementById('tpl-select').value;
+  const modal = document.getElementById('tpl-modal');
+  const type = (modal && modal.dataset.type) || 'mammon';
   const tpl = editingTemplates[type] || TEMPLATES[type] || [];
   renderTplEditor(type, tpl);
 }
 
 function renderTplEditor(type, items){
-  const el = document.getElementById('tpl-editor');
+  const el = document.getElementById('tpl-modal-list');
   el.innerHTML = items.map((item,i) => `
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;" id="tpl-row-${i}">
       <div style="display:flex;flex-direction:column;gap:2px;">
@@ -1437,20 +1481,20 @@ function renderTplEditor(type, items){
 }
 
 function addTplRow(){
-  const type = document.getElementById('tpl-select').value;
+  const type = document.getElementById('tpl-modal').dataset.type||'mammon';
   const items = editingTemplates[type] || [...(TEMPLATES[type]||[])];
   items.push({emoji:'🔗', name:'', link:''});
   renderTplEditor(type, items);
 }
 
 function removeTplRow(i){
-  const type = document.getElementById('tpl-select').value;
+  const type = document.getElementById('tpl-modal').dataset.type||'mammon';
   const items = editingTemplates[type] || [...(TEMPLATES[type]||[])];
   items.splice(i, 1);
   renderTplEditor(type, items);
 }
 function moveTplRow(i, dir){
-  const type = document.getElementById('tpl-select').value;
+  const type = document.getElementById('tpl-modal').dataset.type||'mammon';
   // Save current input values first
   const rows = document.querySelectorAll('[id^="tpl-row-"]');
   const current = Array.from(rows).map((_,idx)=>({
@@ -1466,7 +1510,7 @@ function moveTplRow(i, dir){
 }
 
 async function saveTplEditor(){
-  const type = document.getElementById('tpl-select').value;
+  const type = document.getElementById('tpl-modal').dataset.type||'mammon';
   const items = editingTemplates[type] || [];
   // Read current values from inputs
   const rows = document.querySelectorAll('[id^="tpl-row-"]');
@@ -1486,7 +1530,9 @@ async function saveTplEditor(){
   }
   TEMPLATES[type] = saved;
   editingTemplates[type] = saved;
-  showToast('✅ Đã lưu template ' + (type==='mammon'?'Mầm Non':'Tiểu Học') + '!');
+  showToast('✅ Đã lưu template ' + (type==='mammon'?'🌱 Mầm Non':'📚 Tiểu Học') + '!');
+  // reload template buttons if on add form
+  loadTemplate('reload_silent');
 }
 
 async function loadCustomTemplates(){
