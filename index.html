@@ -783,11 +783,11 @@ function goPage(p){ page=p; renderLessons(); window.scrollTo({top:0,behavior:'sm
 
 function lessonCard(l, unlocked=true){
   const acts=(l.activities||[]).map((a,i)=>`
-    <a class="act-bar ${AB[i%AB.length]}" href="${a.link||'#'}" target="_blank" rel="noopener" onclick="openLesson(event, '${a.link||'#'}')">
+    <div class="act-bar ${AB[i%AB.length]}" onclick="openLessonSecure('${btoa(a.link||'').replace(/=/g,'')}', '${l.classId}')" style="cursor:pointer;">
       <div class="act-bar-icon">${a.emoji||'🔗'}</div>
       <span class="act-bar-name">${a.name||''}</span>
       <div class="act-bar-arrow">▶</div>
-    </a>`).join('');
+    </div>`).join('');
   const imgHtml = l.image_url ? `
     <a href="${l.image_url}" target="_blank" rel="noopener" style="display:block;border-bottom:2px solid #f3f0ff;">
       <img src="${l.image_url}" style="width:100%;display:block;max-height:160px;object-fit:cover;cursor:pointer;" alt="mindmap"/>
@@ -1321,6 +1321,22 @@ function showToast(msg){ const t=document.getElementById('toast'); t.textContent
 
 // ===== CLOSE OVERLAY ON BG CLICK =====
 document.getElementById('admin-overlay').addEventListener('click',e=>{ if(e.target===document.getElementById('admin-overlay')) closeAdmin(); });
+
+function openLessonSecure(encoded, classId){
+  // Check auth for locked lessons
+  if(!currentUser && !encoded){ 
+    openLoginModal(); return; 
+  }
+  try{
+    // Pad base64 if needed
+    const pad = encoded.length % 4 ? encoded + '='.repeat(4 - encoded.length % 4) : encoded;
+    const url = atob(pad);
+    if(!url){ return; }
+    // Open in new tab
+    const w = window.open(url, '_blank');
+    if(!w) window.location.href = url;
+  } catch(e){ console.error('Link error', e); }
+}
 
 function openLesson(e, url){
   if(!url || url==='#') return;
