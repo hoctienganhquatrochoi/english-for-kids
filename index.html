@@ -1381,6 +1381,16 @@ function closeLoginModal(){
   document.getElementById('login-modal').style.display='none';
 }
 
+// Generate or get device fingerprint
+function getDeviceId(){
+  let id = localStorage.getItem('efk_device_id');
+  if(!id){
+    id = 'dev_' + Date.now() + '_' + Math.random().toString(36).substr(2,9);
+    localStorage.setItem('efk_device_id', id);
+  }
+  return id;
+}
+
 async function doStudentLogin(){
   const username = document.getElementById('login-username').value.trim();
   const password = document.getElementById('login-password').value.trim();
@@ -1393,12 +1403,59 @@ async function doStudentLogin(){
     if(acc.password !== password){ showLoginError('Mật khẩu không đúng!'); return; }
     if(acc.expires_at && new Date(acc.expires_at) < new Date()){ showLoginError('Tài khoản đã hết hạn! Liên hệ cô giáo để gia hạn.'); return; }
     
+    // Device management - max 2 devices
+    const deviceId = getDeviceId();
+    let devices = Array.isArray(acc.devices) ? acc.devices : [];
+    
+    if(!devices.includes(deviceId)){
+      // New device - add it, keep only last 2
+      devices.push(deviceId);
+      if(devices.length > 2) devices = devices.slice(-2); // keep newest 2, kick oldest
+      // Save updated devices to DB
+      await fetch(SUPA_URL+'/rest/v1/student_accounts?id=eq.'+acc.id, {
+        method:'PATCH', headers: HEADERS,
+        body: JSON.stringify({devices})
+      });
+      acc.devices = devices;
+    }
+    
     currentUser = acc;
+    currentUser.deviceId = deviceId;
     closeLoginModal();
     updateLoginBar();
     renderLessons();
+    // Start session check every 60s
+    startSessionCheck();
     showToast('✅ Chào '+acc.full_name+'! Đăng nhập thành công 🎉');
   } catch(e){ showLoginError('Lỗi kết nối, thử lại!'); }
+}
+
+// Check every 60s if this device is still authorized
+let sessionTimer = null;
+function startSessionCheck(){
+  if(sessionTimer) clearInterval(sessionTimer);
+  sessionTimer = setInterval(async ()=>{
+    if(!currentUser) { clearInterval(sessionTimer); return; }
+    try{
+      const data = await sbGet('student_accounts','id=eq.'+currentUser.id);
+      const acc = data[0];
+      if(!acc) { forceLogout('Tài khoản không còn tồn tại!'); return; }
+      if(acc.expires_at && new Date(acc.expires_at) < new Date()){ forceLogout('Tài khoản đã hết hạn!'); return; }
+      const devices = Array.isArray(acc.devices) ? acc.devices : [];
+      if(!devices.includes(currentUser.deviceId)){ 
+        forceLogout('Tài khoản vừa đăng nhập trên thiết bị khác. Vui lòng đăng nhập lại!'); 
+        return; 
+      }
+    } catch(e){}
+  }, 60000);
+}
+
+function forceLogout(msg){
+  clearInterval(sessionTimer);
+  currentUser = null;
+  updateLoginBar();
+  renderLessons();
+  alert('⚠️ ' + msg);
 }
 
 function showLoginError(msg){
@@ -1406,7 +1463,21 @@ function showLoginError(msg){
   el.textContent = msg; el.style.display='block';
 }
 
-function doLogout(){
+async function doLogout(){
+  if(currentUser){
+    // Remove this device from DB
+    try{
+      const data = await sbGet('student_accounts','id=eq.'+currentUser.id);
+      const acc = data[0];
+      if(acc){
+        const devices = (Array.isArray(acc.devices)?acc.devices:[]).filter(d=>d!==currentUser.deviceId);
+        await fetch(SUPA_URL+'/rest/v1/student_accounts?id=eq.'+acc.id,{
+          method:'PATCH', headers:HEADERS, body:JSON.stringify({devices})
+        });
+      }
+    } catch(e){}
+  }
+  clearInterval(sessionTimer);
   currentUser = null;
   updateLoginBar();
   renderLessons();
