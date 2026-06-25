@@ -22,8 +22,11 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
 
 /* CLASS TABS BAR */
 .class-tabs-bar{background:white;border-bottom:3px solid #e8e0ff;box-shadow:0 2px 6px rgba(0,0,0,0.05);position:sticky;top:0;z-index:100;}
-.class-tabs-inner{max-width:1040px;margin:0 auto;display:flex;gap:8px;overflow-x:auto;padding:12px 16px 0;scrollbar-width:none;}
+.class-tabs-wrap{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:4px;padding:10px 8px 0;}
+.class-tabs-inner{flex:1;display:flex;gap:8px;overflow-x:auto;padding-bottom:0;scrollbar-width:none;scroll-behavior:smooth;}
 .class-tabs-inner::-webkit-scrollbar{display:none;}
+.tab-scroll-btn{background:white;border:2px solid #e8e0ff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:#9B59B6;flex-shrink:0;margin-bottom:2px;transition:all 0.2s;}
+.tab-scroll-btn:hover{background:#f3f0ff;}
 .cls-tab{flex-shrink:0;padding:11px 22px;border-radius:50px;font-size:14px;font-weight:700;font-family:'Nunito',sans-serif;border:none;cursor:pointer;color:white;transition:all 0.18s;letter-spacing:0.2px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 6px rgba(0,0,0,0.12);margin-bottom:10px;}
 .cls-tab.active{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,0.22);}
 .cls-tab.active{filter:brightness(1.08);}
@@ -214,7 +217,11 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
 
 <!-- CLASS TABS -->
 <div class="class-tabs-bar">
-  <div class="class-tabs-inner" id="class-tabs"></div>
+  <div class="class-tabs-wrap">
+    <button class="tab-scroll-btn" onclick="scrollTabs(-1)" id="tab-btn-left">◀</button>
+    <div class="class-tabs-inner" id="class-tabs"></div>
+    <button class="tab-scroll-btn" onclick="scrollTabs(1)" id="tab-btn-right">▶</button>
+  </div>
 </div>
 <!-- SECONDARY NAV -->
 <div style="background:#fff;border-bottom:2px solid #e8e0ff;display:flex;justify-content:center;align-items:center;gap:0;position:relative;">
@@ -302,6 +309,22 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
       <button onclick="saveTplEditor()" style="flex:1;background:#9B59B6;color:white;border:none;border-radius:10px;padding:10px;font-weight:800;font-size:13px;cursor:pointer;">💾 Lưu</button>
       <button onclick="closeTplManager()" style="flex:1;background:#f3f4f6;color:#666;border:none;border-radius:10px;padding:10px;font-weight:700;font-size:13px;cursor:pointer;">Đóng</button>
     </div>
+  </div>
+</div>
+
+
+<!-- LESSON IFRAME POPUP -->
+<div id="lesson-iframe-popup" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:9500;flex-direction:column;">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:#1e1b4b;">
+    <div style="color:white;font-weight:800;font-size:14px;" id="iframe-title">📚 Đang học...</div>
+    <button onclick="closeLesson()" style="background:#DC2626;color:white;border:none;border-radius:8px;padding:7px 16px;font-weight:800;font-size:13px;cursor:pointer;">✕ Đóng</button>
+  </div>
+  <iframe id="lesson-iframe" src="" style="flex:1;border:none;width:100%;background:white;" allowfullscreen></iframe>
+  <div id="iframe-error" style="display:none;flex:1;align-items:center;justify-content:center;flex-direction:column;color:white;text-align:center;padding:20px;">
+    <div style="font-size:48px;margin-bottom:16px;">😔</div>
+    <div style="font-size:18px;font-weight:800;margin-bottom:8px;">Không thể hiển thị trong app</div>
+    <div style="font-size:13px;color:#aaa;margin-bottom:20px;">Wordwall không cho phép nhúng vào trang khác</div>
+    <button id="iframe-open-btn" style="background:#9B59B6;color:white;border:none;border-radius:10px;padding:12px 28px;font-size:15px;font-weight:800;cursor:pointer;">🔗 Mở trong tab mới</button>
   </div>
 </div>
 
@@ -1323,16 +1346,10 @@ function showToast(msg){ const t=document.getElementById('toast'); t.textContent
 document.getElementById('admin-overlay').addEventListener('click',e=>{ if(e.target===document.getElementById('admin-overlay')) closeAdmin(); });
 
 function openLessonSecure(encoded, classId){
-  // Check auth for locked lessons
-  if(!currentUser && !encoded){ 
-    openLoginModal(); return; 
-  }
   try{
-    // Pad base64 if needed
     const pad = encoded.length % 4 ? encoded + '='.repeat(4 - encoded.length % 4) : encoded;
     const url = atob(pad);
     if(!url){ return; }
-    // Open in new tab
     const w = window.open(url, '_blank');
     if(!w) window.location.href = url;
   } catch(e){ console.error('Link error', e); }
@@ -1376,6 +1393,12 @@ function showZaloPopup(e){
   popup.onclick = function(ev){ if(ev.target===popup) popup.style.display='none'; }
 }
 
+
+
+function scrollTabs(dir){
+  const el = document.getElementById('class-tabs');
+  el.scrollBy({left: dir * 200, behavior: 'smooth'});
+}
 
 // ===== LOGIN SYSTEM =====
 
