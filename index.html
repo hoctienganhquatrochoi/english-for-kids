@@ -1145,7 +1145,7 @@ function renderAdminList(){
         <button onclick="togglePublic(${l.id},${l.is_public===true && (!l.public_until || new Date(l.public_until)>new Date())})"
           title="${l.public_until ? 'Hết hạn: '+new Date(l.public_until).toLocaleDateString('vi-VN') : ''}"
           style="background:${l.is_public===true && (!l.public_until||new Date(l.public_until)>new Date())?'#D1FAE5':'#FEE2E2'};color:${l.is_public===true && (!l.public_until||new Date(l.public_until)>new Date())?'#059669':'#DC2626'};border:none;border-radius:8px;padding:5px 8px;font-size:12px;cursor:pointer;font-family:Nunito,sans-serif;font-weight:800;">
-          ${l.is_public===true && (!l.public_until||new Date(l.public_until)>new Date()) ? (l.public_until?'⏳':'🌐') : '🔒'}
+          ${l.is_public===true && (!l.public_until||new Date(l.public_until)>new Date()) ? (l.public_until && l.public_until!=='null'?'⏳':'🌐') : '🔒'}
         </button>
         <button class="btn-ed" onclick="editLesson(${l.id})">✏️</button>
         <button class="btn-dl" onclick="deleteLesson(${l.id})">🗑️</button>
