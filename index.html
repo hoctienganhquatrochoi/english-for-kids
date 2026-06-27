@@ -328,6 +328,39 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
   </div>
 </div>
 
+
+<!-- PROFILE MODAL -->
+<div id="profile-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:8000;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:20px;padding:28px;max-width:340px;width:92%;box-shadow:0 10px 40px rgba(0,0,0,0.25);">
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="font-size:44px;">👤</div>
+      <div style="font-weight:900;font-size:18px;color:#9B59B6;margin-top:6px;" id="pf-name"></div>
+      <div style="font-size:12px;color:#aaa;margin-top:3px;" id="pf-group"></div>
+    </div>
+    <div style="background:#f8f4ff;border-radius:12px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:13px;color:#555;margin-bottom:8px;font-weight:700;">📚 Lớp đang học:</div>
+      <div id="pf-classes" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+    </div>
+    <div id="pf-expires-wrap" style="background:#f8f4ff;border-radius:12px;padding:12px;margin-bottom:16px;text-align:center;">
+      <div style="font-size:12px;color:#888;">⏰ Tài khoản hết hạn</div>
+      <div style="font-size:16px;font-weight:900;color:#9B59B6;margin-top:4px;" id="pf-expires"></div>
+      <div id="pf-days" style="font-size:12px;margin-top:3px;"></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="document.getElementById('profile-modal').style.display='none'" style="flex:1;background:#f3f4f6;color:#666;border:none;border-radius:10px;padding:10px;font-weight:700;cursor:pointer;">Đóng</button>
+      <button onclick="doLogout()" style="flex:1;background:#FEE2E2;color:#DC2626;border:none;border-radius:10px;padding:10px;font-weight:800;cursor:pointer;">🚪 Đăng xuất</button>
+    </div>
+  </div>
+</div>
+
+<!-- RENEWAL WARNING BANNER -->
+<div id="renewal-banner" style="display:none;background:linear-gradient(135deg,#FEF3C7,#FDE68A);border-bottom:2px solid #F59E0B;padding:10px 16px;text-align:center;position:sticky;top:0;z-index:99;">
+  <span style="font-size:13px;font-weight:800;color:#92400E;">⚠️ Tài khoản sắp hết hạn! </span>
+  <span id="renewal-days" style="font-size:13px;color:#92400E;"></span>
+  <span style="font-size:13px;color:#92400E;"> — Liên hệ </span>
+  <a href="https://zalo.me/0339666883" target="_blank" style="font-size:13px;font-weight:900;color:#D97706;">Zalo ngay 📱</a>
+</div>
+
 <!-- ADMIN PANEL -->
 <div class="admin-overlay" id="admin-overlay">
   <div class="admin-panel">
@@ -1416,6 +1449,61 @@ async function togglePublic(id, current){
   showToast(newVal ? '🌐 Đã mở public!' : '🔒 Đã khoá lại!');
 }
 
+
+function openProfile(){
+  if(!currentUser) return;
+  document.getElementById('pf-name').textContent = currentUser.full_name || '';
+  document.getElementById('pf-group').textContent = currentUser.group_type==='student' ? '👨‍🎓 Học sinh' : '💰 Khách hàng';
+  
+  // Classes
+  const access = currentUser.class_access || [];
+  const clsEl = document.getElementById('pf-classes');
+  clsEl.innerHTML = access.map(id=>{
+    const c = classes.find(x=>x.id===id);
+    return c ? `<span style="background:#e8e0ff;color:#7C3AED;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;">${c.emoji||''} ${c.name}</span>` : '';
+  }).join('') || '<span style="color:#aaa;font-size:12px;">Chưa có lớp</span>';
+
+  // Expiry
+  if(currentUser.expires_at){
+    const exp = new Date(currentUser.expires_at);
+    const now = new Date();
+    const days = Math.ceil((exp-now)/(1000*60*60*24));
+    document.getElementById('pf-expires').textContent = exp.toLocaleDateString('vi-VN');
+    const dEl = document.getElementById('pf-days');
+    if(days > 0){
+      dEl.textContent = `Còn ${days} ngày`;
+      dEl.style.color = days <= 30 ? '#DC2626' : '#059669';
+    } else {
+      dEl.textContent = 'Đã hết hạn!';
+      dEl.style.color = '#DC2626';
+    }
+  }
+  document.getElementById('profile-modal').style.display='flex';
+}
+
+function checkRenewal(){
+  if(!currentUser || !currentUser.expires_at) return;
+  const days = Math.ceil((new Date(currentUser.expires_at)-new Date())/(1000*60*60*24));
+  const banner = document.getElementById('renewal-banner');
+  if(days > 0 && days <= 7){
+    document.getElementById('renewal-days').textContent = `Còn ${days} ngày`;
+    banner.style.display='block';
+  } else {
+    banner.style.display='none';
+  }
+}
+
+function shareCurrentClass(){
+  const c = classes.find(x=>x.id===activeClass);
+  const slug = c ? toSlug(c.name) : '';
+  const url = window.location.origin + window.location.pathname + (slug ? '?lop='+slug : '');
+  navigator.clipboard.writeText(url).then(()=>{
+    showToast('✅ Đã copy link! Paste vào TikTok/Facebook nhé 🔗');
+  }).catch(()=>{
+    prompt('Copy link này:', url);
+  });
+}
+
 // ===== LOGIN SYSTEM =====
 
 function togglePass(inputId, btnId){
@@ -1542,12 +1630,16 @@ async function doLogout(){
 function updateLoginBar(){
   const bar = document.getElementById('login-status-bar');
   if(currentUser){
-    bar.innerHTML = `<div style="display:flex;align-items:center;gap:8px;">
-      <span style="font-size:12px;font-weight:800;color:#9B59B6;">👤 ${currentUser.full_name}</span>
-      <button onclick="doLogout()" style="background:#FEE2E2;color:#DC2626;border:none;border-radius:20px;padding:5px 12px;font-size:11px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">Đăng xuất</button>
+    bar.innerHTML = `<div style="display:flex;align-items:center;gap:6px;">
+      <button onclick="openProfile()" style="background:#f3f0ff;color:#9B59B6;border:2px solid #e8e0ff;border-radius:20px;padding:5px 12px;font-size:11px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">👤 ${currentUser.full_name}</button>
     </div>`;
+    checkRenewal();
   } else {
-    bar.innerHTML = `<button onclick="openLoginModal()" style="background:#9B59B6;color:white;border:none;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">🔑 Đăng nhập</button>`;
+    bar.innerHTML = `<div style="display:flex;align-items:center;gap:6px;">
+      <button onclick="shareCurrentClass()" style="background:#EEF2FF;color:#4338CA;border:none;border-radius:20px;padding:5px 12px;font-size:11px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">🔗 Chia sẻ</button>
+      <button onclick="openLoginModal()" style="background:#9B59B6;color:white;border:none;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">🔑 Đăng nhập</button>
+    </div>`;
+    document.getElementById('renewal-banner').style.display='none';
   }
 }
 
