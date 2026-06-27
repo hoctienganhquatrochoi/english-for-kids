@@ -1180,13 +1180,17 @@ function checkDeepLink(){
   // Scroll to specific lesson if anchor present
   const hash = window.location.hash;
   if(hash && hash.startsWith('#bai-')){
-    setTimeout(()=>{
+    function tryScroll(attempts){
       const el = document.querySelector(hash);
-      if(el){ el.scrollIntoView({behavior:'smooth', block:'center'}); 
+      if(el){ 
+        el.scrollIntoView({behavior:'smooth', block:'center'}); 
         el.style.boxShadow='0 0 0 3px #9B59B6, 0 3px 14px rgba(0,0,0,0.08)';
         setTimeout(()=>{ el.style.boxShadow=''; }, 2500);
+      } else if(attempts > 0){
+        setTimeout(()=>tryScroll(attempts-1), 400);
       }
-    }, 800);
+    }
+    setTimeout(()=>tryScroll(8), 600);
   }
 }
 
@@ -1516,7 +1520,8 @@ async function setPublic(id, isPublic, days){
     method:'PATCH', headers: HEADERS,
     body: JSON.stringify({is_public: isPublic, public_until})
   });
-  const l = lessons.find(x=>x.id===id);
+  // Fix: compare as string to handle both number and string ids
+  const l = lessons.find(x=>String(x.id)===String(id));
   if(l){ l.is_public = isPublic; l.public_until = public_until; }
   document.getElementById('pub-modal').style.display='none';
   renderAdminList();
