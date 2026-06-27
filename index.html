@@ -704,7 +704,7 @@ async function loadData(){
       sbGet('documents','order=created_at.asc')
     ]);
     classes = cls.length ? cls.map(c=>({...c, id: c.id})) : defCls();
-    lessons = les.length ? les.map(l=>({...l, classId: l.class_id, desc: l.description, activities: l.activities||[]})) : [];
+    lessons = les.length ? les.map(l=>({...l, classId: l.class_id, desc: l.description, activities: l.activities||[], is_public: l.is_public||false})) : [];
     documents = docs.length ? docs.map(d=>({...d, classId: d.class_id})) : [];
     if(!cls.length) await seedDefaultClasses();
   } catch(e){
@@ -792,9 +792,7 @@ function renderLessons(){
   const slice=cl.slice((page-1)*PER_PAGE, page*PER_PAGE);
   const canAccess = currentUser && hasAccess(activeClass);
   grid.innerHTML=slice.map((l,i)=>{
-    // First 2 lessons are always free (index in full cl array)
-    const globalIdx = cl.indexOf(l);
-    const isFree = globalIdx < 2;
+    const isFree = l.is_public === true;
     return lessonCard(l, isFree || canAccess);
   }).join('');
   if(pages<=1){ pg.innerHTML=''; return; }
@@ -1398,6 +1396,20 @@ function showZaloPopup(e){
 function scrollTabs(dir){
   const el = document.getElementById('class-tabs');
   el.scrollBy({left: dir * 200, behavior: 'smooth'});
+}
+
+
+async function togglePublic(id, current){
+  const newVal = !current;
+  await fetch(SUPA_URL+'/rest/v1/lessons?id=eq.'+id, {
+    method:'PATCH', headers: HEADERS,
+    body: JSON.stringify({is_public: newVal})
+  });
+  const l = lessons.find(x=>x.id===id);
+  if(l) l.is_public = newVal;
+  renderAdminList();
+  renderLessons();
+  showToast(newVal ? '🌐 Đã mở public!' : '🔒 Đã khoá lại!');
 }
 
 // ===== LOGIN SYSTEM =====
