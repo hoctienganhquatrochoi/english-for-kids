@@ -1071,6 +1071,10 @@ function renderAdminList(){
         ${acts?`<div class="al-acts">${acts}</div>`:''}
       </div>
       <div class="al-btns">
+        <button onclick="togglePublic(${l.id},${l.is_public===true})" title="${'${l.is_public===true?\'Đang public\':\'Đang khoá\'}'}"
+          style="background:${'${l.is_public===true?\'#D1FAE5\':\'#FEE2E2\'}'};color:${'${l.is_public===true?\'#059669\':\'#DC2626\'}'};border:none;border-radius:8px;padding:5px 8px;font-size:14px;cursor:pointer;">
+          ${'${l.is_public===true?\'🌐\':\'🔒\'}'}
+        </button>
         <button class="btn-ed" onclick="editLesson(${l.id})">✏️</button>
         <button class="btn-dl" onclick="deleteLesson(${l.id})">🗑️</button>
       </div>
