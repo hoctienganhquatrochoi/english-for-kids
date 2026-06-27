@@ -361,6 +361,41 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
   <a href="https://zalo.me/0339666883" target="_blank" style="font-size:13px;font-weight:900;color:#D97706;">Zalo ngay 📱</a>
 </div>
 
+
+<!-- PUBLIC OPTIONS MODAL -->
+<div id="pub-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:9000;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:20px;padding:24px;max-width:320px;width:92%;box-shadow:0 10px 40px rgba(0,0,0,0.25);">
+    <div style="font-weight:900;font-size:15px;color:#9B59B6;margin-bottom:16px;" id="pub-modal-title">🌐 Mở public</div>
+    <input type="hidden" id="pub-modal-id"/>
+    
+    <!-- Option 1: Mở mãi -->
+    <button onclick="setPublic(document.getElementById('pub-modal-id').value, true, null)"
+      style="width:100%;background:#D1FAE5;color:#059669;border:2px solid #6EE7B7;border-radius:12px;padding:14px;font-weight:800;font-size:14px;cursor:pointer;margin-bottom:10px;text-align:left;">
+      🌐 Mở mãi mãi<br>
+      <span style="font-size:11px;font-weight:600;opacity:0.8;">Không tự khoá, bạn tự tắt khi muốn</span>
+    </button>
+    
+    <!-- Option 2: Mở có hạn -->
+    <div style="background:#FEF3C7;border:2px solid #FCD34D;border-radius:12px;padding:14px;margin-bottom:10px;">
+      <div style="font-weight:800;font-size:14px;color:#92400E;margin-bottom:10px;">⏳ Mở có thời hạn</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <input type="number" id="pub-days" value="7" min="1" max="365"
+          style="width:70px;padding:8px;border:2px solid #FCD34D;border-radius:8px;font-size:16px;font-weight:800;text-align:center;font-family:'Nunito',sans-serif;"/>
+        <span style="font-size:14px;color:#92400E;font-weight:700;">ngày rồi tự khoá</span>
+      </div>
+      <button onclick="setPublic(document.getElementById('pub-modal-id').value, true, document.getElementById('pub-days').value)"
+        style="width:100%;background:#F59E0B;color:white;border:none;border-radius:8px;padding:10px;font-weight:800;font-size:13px;cursor:pointer;">
+        ✅ Xác nhận mở
+      </button>
+    </div>
+    
+    <button onclick="document.getElementById('pub-modal').style.display='none'"
+      style="width:100%;background:#f3f4f6;color:#666;border:none;border-radius:10px;padding:10px;font-weight:700;cursor:pointer;">
+      Huỷ
+    </button>
+  </div>
+</div>
+
 <!-- ADMIN PANEL -->
 <div class="admin-overlay" id="admin-overlay">
   <div class="admin-panel">
@@ -737,7 +772,7 @@ async function loadData(){
       sbGet('documents','order=created_at.asc')
     ]);
     classes = cls.length ? cls.map(c=>({...c, id: c.id})) : defCls();
-    lessons = les.length ? les.map(l=>({...l, classId: l.class_id, desc: l.description, activities: l.activities||[], is_public: l.is_public||false})) : [];
+    lessons = les.length ? les.map(l=>({...l, classId: l.class_id, desc: l.description, activities: l.activities||[], is_public: l.is_public||false, public_until: l.public_until||null})) : [];
     documents = docs.length ? docs.map(d=>({...d, classId: d.class_id})) : [];
     if(!cls.length) await seedDefaultClasses();
   } catch(e){
@@ -825,7 +860,8 @@ function renderLessons(){
   const slice=cl.slice((page-1)*PER_PAGE, page*PER_PAGE);
   const canAccess = currentUser && hasAccess(activeClass);
   grid.innerHTML=slice.map((l,i)=>{
-    const isFree = l.is_public === true;
+    const now = new Date();
+    const isFree = l.is_public === true && (!l.public_until || new Date(l.public_until) > now);
     return lessonCard(l, isFree || canAccess);
   }).join('');
   if(pages<=1){ pg.innerHTML=''; return; }
@@ -847,14 +883,16 @@ function lessonCard(l, unlocked=true){
       <img src="${l.image_url}" style="width:100%;display:block;max-height:160px;object-fit:cover;cursor:pointer;" alt="mindmap"/>
     </a>` : '';
   return `
-  <div class="lesson-card">
+  <div class="lesson-card" id="bai-${l.id}">
     ${imgHtml}
-    <div class="lc-head">
+    <div class="lc-head" style="position:relative;">
       <span class="lc-emoji">${l.emoji||'📚'}</span>
-      <div>
+      <div style="flex:1;">
         <div class="lc-title">${l.title}</div>
         ${l.desc?`<div class="lc-desc">${l.desc}</div>`:''}
       </div>
+      <button onclick="shareBai('${l.id}','${l.classId}')" title="Chia sẻ bài này"
+        style="background:#f3f0ff;color:#9B59B6;border:none;border-radius:8px;padding:4px 8px;font-size:13px;cursor:pointer;flex-shrink:0;">🔗</button>
     </div>
     ${unlocked 
       ? `<div class="lc-links">${acts||'<p style="color:#ddd;font-size:13px;padding:4px 0">Chưa có hoạt động</p>'}</div>`
@@ -1104,9 +1142,10 @@ function renderAdminList(){
         ${acts?`<div class="al-acts">${acts}</div>`:''}
       </div>
       <div class="al-btns">
-        <button onclick="togglePublic(${l.id},${l.is_public===true})"
-          style="background:${l.is_public===true?'#D1FAE5':'#FEE2E2'};color:${l.is_public===true?'#059669':'#DC2626'};border:none;border-radius:8px;padding:5px 8px;font-size:14px;cursor:pointer;">
-          ${l.is_public===true?'🌐':'🔒'}
+        <button onclick="togglePublic(${l.id},${l.is_public===true && (!l.public_until || new Date(l.public_until)>new Date())})"
+          title="${l.public_until ? 'Hết hạn: '+new Date(l.public_until).toLocaleDateString('vi-VN') : ''}"
+          style="background:${l.is_public===true && (!l.public_until||new Date(l.public_until)>new Date())?'#D1FAE5':'#FEE2E2'};color:${l.is_public===true && (!l.public_until||new Date(l.public_until)>new Date())?'#059669':'#DC2626'};border:none;border-radius:8px;padding:5px 8px;font-size:12px;cursor:pointer;font-family:Nunito,sans-serif;font-weight:800;">
+          ${l.is_public===true && (!l.public_until||new Date(l.public_until)>new Date()) ? (l.public_until?'⏳':'🌐') : '🔒'}
         </button>
         <button class="btn-ed" onclick="editLesson(${l.id})">✏️</button>
         <button class="btn-dl" onclick="deleteLesson(${l.id})">🗑️</button>
@@ -1137,6 +1176,17 @@ function checkDeepLink(){
   if(classParam){
     const found = classes.find(c => c.id === classParam || toSlug(c.name) === classParam || c.name.toLowerCase().includes(classParam));
     if(found){ activeClass = found.id; buildTabs(); renderClassInfo(); renderLessons(); }
+  }
+  // Scroll to specific lesson if anchor present
+  const hash = window.location.hash;
+  if(hash && hash.startsWith('#bai-')){
+    setTimeout(()=>{
+      const el = document.querySelector(hash);
+      if(el){ el.scrollIntoView({behavior:'smooth', block:'center'}); 
+        el.style.boxShadow='0 0 0 3px #9B59B6, 0 3px 14px rgba(0,0,0,0.08)';
+        setTimeout(()=>{ el.style.boxShadow=''; }, 2500);
+      }
+    }, 800);
   }
 }
 
@@ -1436,17 +1486,46 @@ function scrollTabs(dir){
 }
 
 
-async function togglePublic(id, current){
-  const newVal = !current;
+function togglePublic(id, current){
+  if(current){
+    // Currently public - lock it
+    setPublic(id, false, null);
+  } else {
+    // Currently locked - show options
+    openPublicModal(id);
+  }
+}
+
+function openPublicModal(id){
+  const l = lessons.find(x=>x.id===id);
+  if(!l) return;
+  document.getElementById('pub-modal-title').textContent = '🌐 Mở public: ' + l.title;
+  document.getElementById('pub-modal-id').value = id;
+  document.getElementById('pub-days').value = 7;
+  document.getElementById('pub-modal').style.display='flex';
+}
+
+async function setPublic(id, isPublic, days){
+  let public_until = null;
+  if(isPublic && days){
+    const d = new Date();
+    d.setDate(d.getDate() + parseInt(days));
+    public_until = d.toISOString();
+  }
   await fetch(SUPA_URL+'/rest/v1/lessons?id=eq.'+id, {
     method:'PATCH', headers: HEADERS,
-    body: JSON.stringify({is_public: newVal})
+    body: JSON.stringify({is_public: isPublic, public_until})
   });
   const l = lessons.find(x=>x.id===id);
-  if(l) l.is_public = newVal;
+  if(l){ l.is_public = isPublic; l.public_until = public_until; }
+  document.getElementById('pub-modal').style.display='none';
   renderAdminList();
   renderLessons();
-  showToast(newVal ? '🌐 Đã mở public!' : '🔒 Đã khoá lại!');
+  if(isPublic){
+    showToast(days ? `⏳ Mở ${days} ngày, tự khoá sau!` : '🌐 Đã mở public mãi mãi!');
+  } else {
+    showToast('🔒 Đã khoá lại!');
+  }
 }
 
 
@@ -1493,15 +1572,50 @@ function checkRenewal(){
   }
 }
 
+
+function shareBai(lessonId, classId){
+  const c = classes.find(x=>x.id===classId);
+  const slug = c ? toSlug(c.name) : '';
+  const url = window.location.origin + window.location.pathname + '?lop=' + slug + '#bai-' + lessonId;
+  navigator.clipboard.writeText(url).then(()=>{
+    showToast('✅ Đã copy link bài học! 🔗');
+  }).catch(()=>{
+    prompt('Copy link này:', url);
+  });
+}
+
 function shareCurrentClass(){
   const c = classes.find(x=>x.id===activeClass);
   const slug = c ? toSlug(c.name) : '';
   const url = window.location.origin + window.location.pathname + (slug ? '?lop='+slug : '');
   navigator.clipboard.writeText(url).then(()=>{
-    showToast('✅ Đã copy link! Paste vào TikTok/Facebook nhé 🔗');
+    showToast('✅ Đã copy link lớp! 🔗');
   }).catch(()=>{
     prompt('Copy link này:', url);
   });
+}
+
+
+
+// ===== PUBLIC EXPIRY CHECK =====
+let publicCheckTimer = null;
+
+function startPublicCheck(){
+  if(publicCheckTimer) clearInterval(publicCheckTimer);
+  publicCheckTimer = setInterval(()=>{
+    const now = new Date();
+    let changed = false;
+    lessons.forEach(l=>{
+      if(l.is_public && l.public_until && new Date(l.public_until) <= now){
+        l.is_public = false;
+        changed = true;
+      }
+    });
+    if(changed){
+      renderLessons();
+      renderAdminList();
+    }
+  }, 60000); // check every 60 seconds
 }
 
 // ===== LOGIN SYSTEM =====
