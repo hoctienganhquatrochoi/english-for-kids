@@ -1128,10 +1128,14 @@ function renderAdminList(){
     return true;
   });
   const list=document.getElementById('admin-list');
-  list.innerHTML=fl.length?fl.map(l=>{
+  list.innerHTML=fl.length?fl.map((l,i)=>{
     const c=classes.find(x=>x.id===l.classId);
     const acts=(l.activities||[]).map(a=>(a.emoji||'')+' '+a.name).join(' · ');
     return `<div class="al-item">
+      <div style="display:flex;flex-direction:column;gap:2px;margin-right:4px;">
+        <button onclick="moveLesson('${l.id}',-1,'${l.classId}')" ${i===0?'disabled':''} style="background:#e0e7ff;border:none;border-radius:4px;width:22px;height:20px;cursor:pointer;font-size:10px;${i===0?'opacity:0.3':''}">▲</button>
+        <button onclick="moveLesson('${l.id}',1,'${l.classId}')" ${i===fl.length-1?'disabled':''} style="background:#e0e7ff;border:none;border-radius:4px;width:22px;height:20px;cursor:pointer;font-size:10px;${i===fl.length-1?'opacity:0.3':''}">▼</button>
+      </div>
       <span class="al-emoji-big">${l.emoji||'📚'}</span>
       <div class="al-info">
         <div class="al-title">${l.title}</div>
@@ -1152,6 +1156,38 @@ function renderAdminList(){
       </div>
     </div>`;
   }).join(''):`<div class="empty-state" style="padding:30px"><div class="ei">📭</div><p>Chưa có bài nào</p></div>`;
+}
+
+
+async function moveLesson(id, dir, classId){
+  // Get all lessons in same class, sorted by sort_order
+  const cl = lessons.filter(l=>l.classId===classId).sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
+  const idx = cl.findIndex(l=>String(l.id)===String(id));
+  const j = idx + dir;
+  if(j<0||j>=cl.length) return;
+
+  // Swap sort_order
+  const a = cl[idx], b = cl[j];
+  const tempOrder = a.sort_order||0;
+  a.sort_order = b.sort_order||0;
+  b.sort_order = tempOrder;
+
+  // If same sort_order, assign new values
+  if(a.sort_order === b.sort_order){
+    a.sort_order = idx;
+    b.sort_order = j;
+  }
+
+  // Save both to Supabase
+  await Promise.all([
+    fetch(SUPA_URL+'/rest/v1/lessons?id=eq.'+a.id,{method:'PATCH',headers:HEADERS,body:JSON.stringify({sort_order:a.sort_order})}),
+    fetch(SUPA_URL+'/rest/v1/lessons?id=eq.'+b.id,{method:'PATCH',headers:HEADERS,body:JSON.stringify({sort_order:b.sort_order})})
+  ]);
+
+  // Re-sort lessons array
+  lessons.sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
+  renderAdminList();
+  renderLessons();
 }
 
 // ===== SWITCH VIEW =====
