@@ -1067,6 +1067,12 @@ async function saveLesson(){
     image_url:document.getElementById('f-img-url').value.trim()||null,
     activities
   };
+  // New lesson: sort_order = max of same class + 1 (always go to bottom)
+  if(!editingId){
+    const sameCls = lessons.filter(l=>l.classId===classId);
+    const maxOrder = sameCls.length ? Math.max(...sameCls.map(l=>l.sort_order||0)) : 0;
+    data.sort_order = maxOrder + 1;
+  }
   showToast('⏳ Đang lưu...');
   if(editingId){
     await sbPatch('lessons', editingId, data);
