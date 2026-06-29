@@ -568,7 +568,7 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
         </div>
 
         <!-- Search + filter -->
-        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
           <input id="acc-search" placeholder="🔍 Tìm tên hoặc SĐT Zalo..." oninput="renderAccountList()"
             style="flex:1;min-width:160px;padding:8px 12px;border:2px solid #e8e0ff;border-radius:10px;font-size:13px;font-family:'Nunito',sans-serif;outline:none;"/>
           <select id="acc-filter-group" onchange="renderAccountList()"
@@ -577,6 +577,14 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
             <option value="student">Học sinh</option>
             <option value="customer">Khách hàng</option>
           </select>
+          <select id="acc-filter-class" onchange="renderAccountList()"
+            style="padding:8px 12px;border:2px solid #e8e0ff;border-radius:10px;font-size:13px;font-family:'Nunito',sans-serif;outline:none;">
+            <option value="">Tất cả lớp</option>
+          </select>
+        </div>
+        <div id="acc-filter-result" style="display:none;background:#f3f0ff;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#7C3AED;font-weight:700;display:flex;align-items:center;justify-content:space-between;">
+          <span id="acc-filter-count"></span>
+          <button onclick="copyZaloNumbers()" style="background:#9B59B6;color:white;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:800;cursor:pointer;">📋 Copy SĐT Zalo</button>
         </div>
 
         <!-- Account list -->
@@ -2020,14 +2028,53 @@ async function deleteAccount(id){
   await loadAccounts(); renderAccountList();
 }
 
-function renderAccountList(){
+function buildAccClassFilter(){
+  const sel = document.getElementById('acc-filter-class');
+  if(!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Tất cả lớp</option>' + 
+    classes.map(c=>`<option value="${c.id}">${c.emoji||''} ${c.name}</option>`).join('');
+  sel.value = cur;
+}
+
+function copyZaloNumbers(){
   const q = (document.getElementById('acc-search')?.value||'').toLowerCase();
   const grp = document.getElementById('acc-filter-group')?.value||'';
-  let list = studentAccounts.filter(a=>{
+  const cls = document.getElementById('acc-filter-class')?.value||'';
+  const list = studentAccounts.filter(a=>{
     if(grp && a.group_type!==grp) return false;
+    if(cls && !(a.class_access||[]).includes(cls)) return false;
     if(q) return [a.full_name,a.zalo_phone,a.username,a.note].join(' ').toLowerCase().includes(q);
     return true;
   });
+  const phones = list.filter(a=>a.zalo_phone).map(a=>a.zalo_phone).join(', ');
+  if(!phones){ showToast('⚠️ Không có SĐT Zalo nào!'); return; }
+  navigator.clipboard.writeText(phones).then(()=>{
+    showToast('✅ Đã copy '+list.filter(a=>a.zalo_phone).length+' SĐT Zalo!');
+  }).catch(()=>{ prompt('Copy SĐT:', phones); });
+}
+
+function renderAccountList(){
+  buildAccClassFilter();
+  const q = (document.getElementById('acc-search')?.value||'').toLowerCase();
+  const grp = document.getElementById('acc-filter-group')?.value||'';
+  const cls = document.getElementById('acc-filter-class')?.value||'';
+  let list = studentAccounts.filter(a=>{
+    if(grp && a.group_type!==grp) return false;
+    if(cls && !(a.class_access||[]).includes(cls)) return false;
+    if(q) return [a.full_name,a.zalo_phone,a.username,a.note].join(' ').toLowerCase().includes(q);
+    return true;
+  });
+  // Show count + copy button when filtering by class
+  const resultBar = document.getElementById('acc-filter-result');
+  const countEl = document.getElementById('acc-filter-count');
+  if(cls || grp || q){
+    resultBar.style.display='flex';
+    const clsName = cls ? (classes.find(x=>x.id===cls)?.name||'') : '';
+    countEl.textContent = `${list.length} tài khoản${clsName?' — '+clsName:''}`;
+  } else {
+    resultBar.style.display='none';
+  }
   const now = new Date();
   const el = document.getElementById('acc-list');
   if(!list.length){ el.innerHTML='<p style="color:#aaa;text-align:center;padding:20px;">Chưa có tài khoản nào</p>'; return; }
