@@ -1174,7 +1174,7 @@ async function saveLesson(){
     description:document.getElementById('f-desc').value.trim(),
     image_url:document.getElementById('f-img-url').value.trim()||null,
     activities,
-    extra_classes: Array.from(document.querySelectorAll('#f-extra-checks input:checked')).map(cb=>cb.value)
+    extra_classes: getExtraClassesFromForm()
   };
   // New lesson: sort_order = max of same class + 1 (always go to bottom)
   if(!editingId){
@@ -2451,11 +2451,55 @@ function buildExtraClassChecks(currentClassId, extraClasses){
   if(!el) return;
   const others = classes.filter(c=>c.id !== currentClassId);
   if(!others.length){ el.innerHTML='<span style="color:#aaa;font-size:12px;">Chưa có lớp khác</span>'; return; }
-  el.innerHTML = others.map(c=>`
-    <label style="display:flex;align-items:center;gap:4px;background:white;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px;font-weight:700;border:2px solid #e8e0ff;">
-      <input type="checkbox" value="${c.id}" ${(extraClasses||[]).includes(c.id)?'checked':''} style="accent-color:#9B59B6;"/>
-      ${c.emoji||'📚'} ${c.name}
-    </label>`).join('');
+  el.innerHTML = others.map(c=>{
+    const subjects = getSubjectsForClass(c.id);
+    const extras = extraClasses||[];
+    // Check if this class is in extras (with or without subject)
+    const clsExtra = extras.find(e=>e.split(':')[0]===c.id);
+    const isChecked = !!clsExtra;
+    const checkedSubj = clsExtra ? clsExtra.split(':')[1]||'' : '';
+    
+    const subjSelect = subjects.length > 1 ? `
+      <select onchange="updateExtraSubject('${c.id}',this.value)" 
+        style="padding:3px 6px;border:1px solid #e8e0ff;border-radius:6px;font-size:11px;font-family:'Nunito',sans-serif;margin-left:4px;" 
+        id="extra-subj-${c.id}">
+        <option value="">Tất cả môn</option>
+        ${subjects.map(s=>`<option value="${s}" ${checkedSubj===s?'selected':''}>${s}</option>`).join('')}
+      </select>` : '';
+    
+    return `<div style="display:flex;align-items:center;background:white;border-radius:8px;padding:5px 10px;border:2px solid ${isChecked?'#9B59B6':'#e8e0ff'};">
+      <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;font-weight:700;">
+        <input type="checkbox" value="${c.id}" ${isChecked?'checked':''} 
+          onchange="toggleExtraClass('${c.id}',this.checked)"
+          style="accent-color:#9B59B6;" id="extra-cls-${c.id}"/>
+        ${c.emoji||'📚'} ${c.name}
+      </label>
+      ${subjSelect}
+    </div>`;
+  }).join('');
+}
+
+function toggleExtraClass(classId, checked){
+  // Just visual feedback - actual value read on save
+  const div = document.querySelector(`#extra-cls-${classId}`)?.closest('div');
+  if(div) div.style.borderColor = checked ? '#9B59B6' : '#e8e0ff';
+}
+
+function updateExtraSubject(classId, subj){
+  // Auto-check the class when subject selected
+  const cb = document.getElementById('extra-cls-'+classId);
+  if(cb && subj) cb.checked = true;
+  toggleExtraClass(classId, !!subj || (cb&&cb.checked));
+}
+
+function getExtraClassesFromForm(){
+  const checks = document.querySelectorAll('#f-extra-checks input[type=checkbox]:checked');
+  return Array.from(checks).map(cb=>{
+    const classId = cb.value;
+    const subjSel = document.getElementById('extra-subj-'+classId);
+    const subj = subjSel ? subjSel.value : '';
+    return subj ? classId+':'+subj : classId;
+  });
 }
 
 // ===== ACCOUNTS MANAGEMENT =====
