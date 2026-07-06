@@ -1671,6 +1671,22 @@ function scrollTabs(dir){
 }
 
 
+async function toggleFeatured(id, current){
+  const l = lessons.find(x=>String(x.id)===String(id));
+  if(current){
+    await fetch(SUPA_URL+'/rest/v1/lessons?id=eq.'+id,{method:'PATCH',headers:HEADERS,body:JSON.stringify({is_featured:false,featured_until:null})});
+    if(l){l.is_featured=false;l.featured_until=null;}
+    renderAdminList(); renderFeatured();
+    showToast('⭐ Đã bỏ nổi bật!');
+  } else {
+    const until = new Date(); until.setDate(until.getDate()+7);
+    await fetch(SUPA_URL+'/rest/v1/lessons?id=eq.'+id,{method:'PATCH',headers:HEADERS,body:JSON.stringify({is_featured:true,featured_until:until.toISOString()})});
+    if(l){l.is_featured=true;l.featured_until=until.toISOString();}
+    renderAdminList(); renderFeatured();
+    showToast('⭐ Đã nổi bật 7 ngày!');
+  }
+}
+
 function togglePublic(id, current){
   if(current){
     // Currently public - lock it
