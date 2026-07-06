@@ -928,8 +928,20 @@ function renderLessons(){
   if(!hasSubjectLessons && activeSubject !== null) activeSubject = null;
   
   let cl=lessons.filter(l=>{
-    if(l.classId!==activeClass) return false;
-    if(activeSubject!==null && (l.subject||'')!==activeSubject) return false;
+    // Check primary class
+    const isPrimary = String(l.classId)===String(activeClass);
+    // Check extra_classes: stored as "classId" or "classId:subject"
+    const isExtra = (l.extra_classes||[]).some(e=>{
+      const parts = String(e).split(':');
+      const eCls = parts[0];
+      const eSubj = parts[1]||'';
+      if(String(eCls) !== String(activeClass)) return false;
+      if(eSubj) return activeSubject===null || activeSubject===eSubj;
+      return true;
+    });
+    if(!isPrimary && !isExtra) return false;
+    // Subject filter only for primary lessons
+    if(isPrimary && activeSubject!==null && (l.subject||'')!==activeSubject) return false;
     return true;
   });
   // Sort by sort_order first, then unit naturally
