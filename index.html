@@ -28,6 +28,12 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
 .tab-scroll-btn{background:white;border:2px solid #e8e0ff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:#9B59B6;flex-shrink:0;margin-bottom:2px;transition:all 0.2s;}
 .tab-scroll-btn:hover{background:#f3f0ff;}
 .cls-tab{flex-shrink:0;padding:11px 22px;border-radius:50px;font-size:14px;font-weight:700;font-family:'Nunito',sans-serif;border:none;cursor:pointer;color:white;transition:all 0.18s;letter-spacing:0.2px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 6px rgba(0,0,0,0.12);margin-bottom:10px;}
+.subj-tabs-wrap{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:4px;padding:8px 8px;overflow-x:auto;scrollbar-width:none;}
+.subj-tabs-wrap::-webkit-scrollbar{display:none;}
+.subj-tab{flex-shrink:0;padding:8px 20px;border-radius:50px;font-size:13px;font-weight:700;font-family:'Nunito',sans-serif;border:2px solid transparent;cursor:pointer;transition:all 0.18s;letter-spacing:0.2px;display:inline-flex;align-items:center;gap:6px;}
+.subj-tab.active{background:#9B59B6;color:white;box-shadow:0 2px 8px rgba(155,89,182,0.4);}
+.subj-tab.inactive{background:#f3f0ff;color:#7C3AED;border-color:#e8e0ff;}
+.subj-tab.inactive:hover{background:#e8e0ff;}
 .cls-tab.active{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,0.22);}
 .cls-tab.active{filter:brightness(1.08);}
 .cls-tab[data-color="pink"]{background:#FF6B9D;}
@@ -224,8 +230,8 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
   </div>
 </div>
 <!-- SECONDARY NAV -->
-<div style="background:#fff;border-bottom:2px solid #e8e0ff;position:relative;">
-  <div style="display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:0;padding:0 50px;" id="subject-tabs-bar">
+<div id="subject-tabs-section" style="background:#fff;border-bottom:2px solid #e8e0ff;display:none;position:relative;">
+  <div class="subj-tabs-wrap" id="subject-tabs-bar">
     <!-- Subject tabs rendered dynamically -->
   </div>
   <div style="position:absolute;right:12px;top:50%;transform:translateY(-50%);" id="login-status-bar">
@@ -235,12 +241,7 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
 
 <!-- MAIN CONTENT -->
 <div class="main-wrap">
-  <div class="class-info-bar" id="class-info-bar">
-    <span class="cib-emoji" id="cib-emoji">🌸</span>
-    <div class="cib-text">
-      <div class="cib-name" id="cib-name">Mầm Non</div>
-      <div class="cib-hint">Bấm vào bài muốn luyện</div>
-    </div>
+  
   </div>
   <!-- BAI HOC view -->
   <div id="view-baihoc">
@@ -1259,23 +1260,28 @@ function buildSubjectTabs(){
   
   let tabs = [];
   
+  const section = document.getElementById('subject-tabs-section');
+  
   if(subjects.length > 1){
-    // Multiple subjects - show subject tabs (no "Tất cả")
+    // Show subject tabs section
+    if(section) section.style.display='block';
+    const SCOLORS = ['#9B59B6','#E74C3C','#27AE60','#2980B9','#F39C12','#16A085','#8E44AD','#D35400'];
     subjects.forEach((sub,i)=>{
       const active = activeSubject===sub && currentView==='baihoc';
-      tabs.push(`<div style="display:flex;align-items:center;gap:2px;">
-        <button onclick="selectSubject('${sub}')"
-          style="padding:9px 16px;border:none;background:none;font-size:13px;font-weight:${active?'900':'700'};cursor:pointer;color:${active?'#7C3AED':'#555'};border-bottom:3px solid ${active?'#9B59B6':'transparent'};font-family:'Nunito',sans-serif;white-space:nowrap;">
-          ${sub}
-        </button>
-      </div>`);
+      const col = SCOLORS[i % SCOLORS.length];
+      tabs.push(`<button onclick="selectSubject('${sub}')"
+        style="flex-shrink:0;padding:8px 20px;border-radius:50px;font-size:13px;font-weight:700;font-family:'Nunito',sans-serif;border:none;cursor:pointer;transition:all 0.18s;display:inline-flex;align-items:center;gap:6px;
+        background:${active ? col : col+'22'};color:${active?'white':col};box-shadow:${active?'0 2px 8px '+col+'66':'none'};">
+        ${sub}
+      </button>`);
     });
     // Auto select first subject if none selected
     if(activeSubject===null && currentView==='baihoc'){
       setTimeout(()=>selectSubject(subjects[0]),50);
     }
   } else {
-    // 0 or 1 subject - show all lessons directly, no tab needed
+    // 0 or 1 subject - hide tabs, show all lessons
+    if(section) section.style.display='none';
     if(activeSubject !== null){ activeSubject = null; }
   }
   
