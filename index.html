@@ -559,10 +559,13 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
 
       <!-- Tab: Danh sách -->
       <div id="pane-list" style="display:none">
-        <div style="display:flex;gap:8px;margin-bottom:12px">
-          <input class="finput" id="admin-q" placeholder="🔍 Tìm bài..." oninput="renderAdminList()" style="flex:1"/>
-          <select class="fselect" id="admin-fcls" onchange="buildAdminSubjFilter();renderAdminList();" style="width:130px">
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+          <input class="finput" id="admin-q" placeholder="🔍 Tìm bài..." oninput="renderAdminList()" style="flex:1;min-width:140px;"/>
+          <select class="fselect" id="admin-fcls" onchange="buildAdminSubjFilter();renderAdminList();" style="width:120px">
             <option value="">Tất cả lớp</option>
+          </select>
+          <select class="fselect" id="admin-fsubj" onchange="renderAdminList()" style="width:120px">
+            <option value="">Tất cả môn</option>
           </select>
         </div>
         <div id="admin-list"></div>
