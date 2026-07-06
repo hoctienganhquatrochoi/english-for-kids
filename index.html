@@ -458,7 +458,7 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
         <div class="form-sc">
           <div class="fg">
             <label class="flabel">Lớp *</label>
-            <select class="fselect" id="f-class" onchange="buildSubjectDropdown()"></select>
+            <select class="fselect" id="f-class" onchange="buildSubjectDropdown();buildExtraClassChecks(this.value,[])"></select>
           </div>
           <div class="form-row-2">
             <div class="fg">
@@ -479,6 +479,10 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
           <div class="fg">
             <label class="flabel">Mô tả ngắn <span class="hint">(tuỳ chọn)</span></label>
             <textarea class="ftextarea" id="f-desc" placeholder="VD: Học tên các màu qua hình ảnh sinh động..."></textarea>
+          </div>
+          <div class="fg full">
+            <label class="flabel">Hiển thị thêm ở lớp khác <span class="hint">(tuỳ chọn)</span></label>
+            <div id="f-extra-checks" style="display:flex;flex-wrap:wrap;gap:6px;background:#f8f4ff;border-radius:8px;padding:8px;border:2px solid #e8e0ff;"></div>
           </div>
           <div class="fg full">
             <label class="flabel">Ảnh mindmap / sơ đồ <span class="hint">(tuỳ chọn, tối đa 5MB)</span></label>
@@ -841,7 +845,7 @@ async function loadData(){
       sbGet('documents','order=created_at.asc')
     ]);
     classes = cls.length ? cls.map(c=>({...c, id: c.id})) : defCls();
-    lessons = les.length ? les.map(l=>({...l, classId: l.class_id, desc: l.description, activities: l.activities||[], is_public: l.is_public||false, public_until: l.public_until||null, subject: l.subject||'', is_featured: l.is_featured||false, featured_until: l.featured_until||null})) : [];
+    lessons = les.length ? les.map(l=>({...l, classId: l.class_id, desc: l.description, activities: l.activities||[], is_public: l.is_public||false, public_until: l.public_until||null, subject: l.subject||'', is_featured: l.is_featured||false, featured_until: l.featured_until||null, extra_classes: l.extra_classes||[]})) : [];
     documents = docs.length ? docs.map(d=>({...d, classId: d.class_id})) : [];
     if(!cls.length) await seedDefaultClasses();
   } catch(e){
@@ -1169,7 +1173,8 @@ async function saveLesson(){
     emoji:document.getElementById('f-emoji').value||'📚',
     description:document.getElementById('f-desc').value.trim(),
     image_url:document.getElementById('f-img-url').value.trim()||null,
-    activities
+    activities,
+    extra_classes: Array.from(document.querySelectorAll('#f-extra-checks input:checked')).map(cb=>cb.value)
   };
   // New lesson: sort_order = max of same class + 1 (always go to bottom)
   if(!editingId){
@@ -1196,6 +1201,7 @@ function clearForm(){
   document.getElementById('f-act-rows').innerHTML='';
   addActRow('f-act-rows');
   clearLessonImage();
+  const ec=document.getElementById('f-extra-checks'); if(ec) ec.innerHTML='';
 }
 function cancelEdit(){ editingId=null; document.getElementById('btn-cancel-edit').style.display='none'; clearForm(); }
 
@@ -1212,6 +1218,8 @@ function editLesson(id){
   document.getElementById('f-act-rows').innerHTML='';
   (l.activities||[]).forEach(a=>addActRow('f-act-rows',a.emoji||'🔗',a.name,a.link));
   if(!l.activities?.length) addActRow('f-act-rows');
+  // Load extra classes
+  buildExtraClassChecks(l.classId, l.extra_classes||[]);
   if(l.image_url){
     document.getElementById('f-img-url').value = l.image_url;
     document.getElementById('f-img-thumb').src = l.image_url;
@@ -1254,6 +1262,7 @@ function renderAdminList(){
       <span class="al-emoji-big">${l.emoji||'📚'}</span>
       <div class="al-info">
         <div class="al-title">${l.title}</div>
+        ${(l.extra_classes||[]).length?`<div style="font-size:10px;color:#9B59B6;margin-top:2px;">📌 Cũng hiện ở: ${(l.extra_classes||[]).map(id=>{const c=classes.find(x=>x.id===id);return c?c.name:'';}).filter(Boolean).join(', ')}</div>`:''}
         <div class="al-meta">
           ${c?`<span class="tag tag-cls">${c.name}</span>`:''}
           ${l.unit?`<span class="tag tag-unit">${l.unit}</span>`:''}
@@ -2434,6 +2443,19 @@ function buildSubjectDropdown(){
     if(inp) inp.setAttribute('list','subject-datalist');
   }
   dl.innerHTML = subjects.map(s=>`<option value="${s}">`).join('');
+}
+
+
+function buildExtraClassChecks(currentClassId, extraClasses){
+  const el = document.getElementById('f-extra-checks');
+  if(!el) return;
+  const others = classes.filter(c=>c.id !== currentClassId);
+  if(!others.length){ el.innerHTML='<span style="color:#aaa;font-size:12px;">Chưa có lớp khác</span>'; return; }
+  el.innerHTML = others.map(c=>`
+    <label style="display:flex;align-items:center;gap:4px;background:white;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px;font-weight:700;border:2px solid #e8e0ff;">
+      <input type="checkbox" value="${c.id}" ${(extraClasses||[]).includes(c.id)?'checked':''} style="accent-color:#9B59B6;"/>
+      ${c.emoji||'📚'} ${c.name}
+    </label>`).join('');
 }
 
 // ===== ACCOUNTS MANAGEMENT =====
