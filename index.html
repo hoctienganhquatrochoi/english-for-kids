@@ -2055,8 +2055,13 @@ function renderSubjectList(){
     el.innerHTML = '<p style="color:#aaa;font-size:13px;text-align:center;padding:12px;">Chưa có môn học nào — thêm môn bên dưới!</p>';
   } else {
     el.innerHTML = subjects.map((s,i)=>`
-      <div style="display:flex;align-items:center;gap:8px;background:#f8f4ff;border-radius:10px;padding:8px 12px;margin-bottom:6px;">
-        <span style="flex:1;font-weight:700;font-size:14px;">📖 ${s}</span>
+      <div style="display:flex;align-items:center;gap:6px;background:#f8f4ff;border-radius:10px;padding:8px 12px;margin-bottom:6px;">
+        <div style="display:flex;flex-direction:column;gap:2px;">
+          <button onclick="moveSubject('${classId}',${i},-1)" ${i===0?'disabled':''} style="background:#e0e7ff;border:none;border-radius:4px;width:22px;height:20px;cursor:pointer;font-size:10px;${i===0?'opacity:0.3':''}">▲</button>
+          <button onclick="moveSubject('${classId}',${i},1)" ${i===subjects.length-1?'disabled':''} style="background:#e0e7ff;border:none;border-radius:4px;width:22px;height:20px;cursor:pointer;font-size:10px;${i===subjects.length-1?'opacity:0.3':''}">▼</button>
+        </div>
+        <span style="flex:1;font-weight:700;font-size:14px;" id="subj-label-${i}">📖 ${s}</span>
+        <button onclick="editSubject('${classId}',${i},'${s}')" style="background:#EDE9FE;color:#7C3AED;border:none;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;">✏️</button>
         <button onclick="deleteSubject('${classId}',${i})" style="background:#FEE2E2;color:#DC2626;border:none;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;">🗑️</button>
       </div>`).join('');
   }
@@ -2064,6 +2069,38 @@ function renderSubjectList(){
   const bulkSel = document.getElementById('subj-bulk-sel');
   if(bulkSel) bulkSel.innerHTML = '<option value="">-- Chọn môn --</option>' + subjects.map(s=>`<option value="${s}">${s}</option>`).join('');
   buildSubjectDropdown();
+}
+
+
+async function moveSubject(classId, i, dir){
+  const subjects = getSubjectsForClass(classId);
+  const j = i + dir;
+  if(j<0||j>=subjects.length) return;
+  [subjects[i], subjects[j]] = [subjects[j], subjects[i]];
+  subjectsData[classId] = subjects;
+  await saveSubjects(classId, subjects);
+  renderSubjectList();
+  buildSubjectTabs();
+  showToast('✅ Đã di chuyển!');
+}
+
+async function editSubject(classId, i, oldName){
+  const newName = prompt('Sửa tên môn:', oldName);
+  if(!newName||newName===oldName) return;
+  const subjects = getSubjectsForClass(classId);
+  // Update subject name in lessons too
+  const toLessons = lessons.filter(l=>l.classId===classId && l.subject===oldName);
+  subjects[i] = newName;
+  subjectsData[classId] = subjects;
+  await saveSubjects(classId, subjects);
+  await Promise.all(toLessons.map(l=>{
+    l.subject = newName;
+    return fetch(SUPA_URL+'/rest/v1/lessons?id=eq.'+l.id,{method:'PATCH',headers:HEADERS,body:JSON.stringify({subject:newName})});
+  }));
+  renderSubjectList();
+  buildSubjectTabs();
+  renderLessons();
+  showToast('✅ Đã đổi tên môn!');
 }
 
 async function bulkAssignSubject(){
