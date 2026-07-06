@@ -224,10 +224,11 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
   </div>
 </div>
 <!-- SECONDARY NAV -->
-<div style="background:#fff;border-bottom:2px solid #e8e0ff;display:flex;justify-content:center;align-items:center;gap:0;position:relative;">
-  <button id="nav-baihoc" onclick="switchView('baihoc')" style="padding:9px 28px;border:none;background:none;font-size:13px;font-weight:800;cursor:pointer;color:#9B59B6;border-bottom:3px solid #9B59B6;font-family:'Nunito',sans-serif;">📚 Bài Học</button>
-  <button id="nav-tailieu" onclick="switchView('tailieu')" style="padding:9px 28px;border:none;background:none;font-size:13px;font-weight:700;cursor:pointer;color:#aaa;border-bottom:3px solid transparent;font-family:'Nunito',sans-serif;">📄 Tài Liệu</button>
-  <div style="position:absolute;right:12px;" id="login-status-bar">
+<div style="background:#fff;border-bottom:2px solid #e8e0ff;position:relative;">
+  <div style="display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:0;padding:0 50px;" id="subject-tabs-bar">
+    <!-- Subject tabs rendered dynamically -->
+  </div>
+  <div style="position:absolute;right:12px;top:50%;transform:translateY(-50%);" id="login-status-bar">
     <button onclick="openLoginModal()" id="btn-login-top" style="background:#9B59B6;color:white;border:none;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">🔑 Đăng nhập</button>
   </div>
 </div>
@@ -453,7 +454,9 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
             </div>
           </div>
           <div class="fg">
-            <label class="flabel">Tên Unit / Nhóm bài <span class="hint">(tự ghi tự do)</span></label>
+            <label class="flabel">Môn học <span class="hint">(để trống = Tiếng Anh)</span></label>
+            <input class="finput" id="f-subject" placeholder="VD: Toán, Tiếng Việt, Tiếng Anh..."/>
+            <label class="flabel" style="margin-top:8px;">Tên Unit / Nhóm bài <span class="hint">(tự ghi tự do)</span></label>
             <input class="finput" id="f-unit" placeholder="VD: Unit 5: My Hobbies  hoặc  Chủ đề Màu sắc"/>
           </div>
           <div class="fg">
@@ -780,7 +783,7 @@ async function loadData(){
       sbGet('documents','order=created_at.asc')
     ]);
     classes = cls.length ? cls.map(c=>({...c, id: c.id})) : defCls();
-    lessons = les.length ? les.map(l=>({...l, classId: l.class_id, desc: l.description, activities: l.activities||[], is_public: l.is_public||false, public_until: l.public_until||null})) : [];
+    lessons = les.length ? les.map(l=>({...l, classId: l.class_id, desc: l.description, activities: l.activities||[], is_public: l.is_public||false, public_until: l.public_until||null, subject: l.subject||''})) : [];
     documents = docs.length ? docs.map(d=>({...d, classId: d.class_id})) : [];
     if(!cls.length) await seedDefaultClasses();
   } catch(e){
@@ -835,7 +838,10 @@ function buildTabs(){
 }
 function toSlug(str){ return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\u0111/g,'d').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
 function selectClass(id){
-  activeClass=id; page=1; buildTabs(); renderClassInfo(); renderLessons();
+  activeClass=id; page=1; activeSubject=null; currentView='baihoc';
+  buildTabs(); renderClassInfo(); renderLessons(); buildSubjectTabs();
+  document.getElementById('view-baihoc').style.display='block';
+  document.getElementById('view-tailieu').style.display='none';
   const c = classes.find(x=>x.id===id);
   const url = new URL(window.location);
   url.searchParams.set('lop', c ? toSlug(c.name) : id);
@@ -1070,6 +1076,7 @@ async function saveLesson(){
     id:editingId||Date.now(),
     title, class_id:classId,
     unit:document.getElementById('f-unit').value.trim(),
+    subject:document.getElementById('f-subject').value.trim()||null,
     emoji:document.getElementById('f-emoji').value||'📚',
     description:document.getElementById('f-desc').value.trim(),
     image_url:document.getElementById('f-img-url').value.trim()||null,
@@ -1094,7 +1101,7 @@ async function saveLesson(){
   await loadCustomTemplates(); clearForm(); buildTabs(); renderClassInfo(); renderLessons(); updateStats(); renderAdminList();
 }
 function clearForm(){
-  ['f-title','f-unit','f-desc'].forEach(id=>document.getElementById(id).value='');
+  ['f-title','f-subject','f-unit','f-desc'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-emoji').value='📚';
   document.getElementById('f-act-rows').innerHTML='';
   addActRow('f-act-rows');
@@ -1109,6 +1116,7 @@ function editLesson(id){
   document.getElementById('f-class').value=l.classId||'';
   document.getElementById('f-emoji').value=l.emoji||'📚';
   document.getElementById('f-title').value=l.title;
+  document.getElementById('f-subject').value=l.subject||'';
   document.getElementById('f-unit').value=l.unit||'';
   document.getElementById('f-desc').value=l.desc||'';
   document.getElementById('f-act-rows').innerHTML='';
@@ -1204,8 +1212,63 @@ async function moveLesson(id, dir, classId){
   renderLessons();
 }
 
-// ===== SWITCH VIEW =====
+
+// ===== SUBJECT TABS =====
+function buildSubjectTabs(){
+  const bar = document.getElementById('subject-tabs-bar');
+  if(!bar) return;
+  
+  // Get subjects for active class
+  const cl = lessons.filter(l=>l.classId===activeClass);
+  const subjects = [...new Set(cl.map(l=>l.subject||'').filter(Boolean))];
+  
+  // Build tabs: subjects + Tài Liệu
+  let tabs = [];
+  
+  if(subjects.length > 0){
+    // Has multiple subjects - show subject tabs
+    const allTab = `<button onclick="selectSubject(null)" 
+      style="padding:9px 16px;border:none;background:none;font-size:13px;font-weight:${activeSubject===null&&currentView==='baihoc'?'800':'600'};cursor:pointer;color:${activeSubject===null&&currentView==='baihoc'?'#9B59B6':'#aaa'};border-bottom:3px solid ${activeSubject===null&&currentView==='baihoc'?'#9B59B6':'transparent'};font-family:'Nunito',sans-serif;white-space:nowrap;">
+      📚 Tất cả
+    </button>`;
+    tabs.push(allTab);
+    
+    subjects.forEach(sub=>{
+      const active = activeSubject===sub && currentView==='baihoc';
+      tabs.push(`<button onclick="selectSubject('${sub}')"
+        style="padding:9px 16px;border:none;background:none;font-size:13px;font-weight:${active?'800':'600'};cursor:pointer;color:${active?'#9B59B6':'#aaa'};border-bottom:3px solid ${active?'#9B59B6':'transparent'};font-family:'Nunito',sans-serif;white-space:nowrap;">
+        ${sub}
+      </button>`);
+    });
+  } else {
+    // No subjects - just show Bài Học tab
+    tabs.push(`<button onclick="selectSubject(null)"
+      style="padding:9px 28px;border:none;background:none;font-size:13px;font-weight:${currentView==='baihoc'?'800':'600'};cursor:pointer;color:${currentView==='baihoc'?'#9B59B6':'#aaa'};border-bottom:3px solid ${currentView==='baihoc'?'#9B59B6':'transparent'};font-family:'Nunito',sans-serif;">
+      📚 Bài Học
+    </button>`);
+  }
+  
+  // Always add Tài Liệu tab
+  tabs.push(`<button onclick="switchView('tailieu')"
+    style="padding:9px 16px;border:none;background:none;font-size:13px;font-weight:${currentView==='tailieu'?'800':'600'};cursor:pointer;color:${currentView==='tailieu'?'#9B59B6':'#aaa'};border-bottom:3px solid ${currentView==='tailieu'?'#9B59B6':'transparent'};font-family:'Nunito',sans-serif;white-space:nowrap;">
+    📄 Tài Liệu
+  </button>`);
+  
+  bar.innerHTML = tabs.join('');
+}
+
 let currentView = 'baihoc';
+function selectSubject(sub){
+  activeSubject = sub;
+  currentView = 'baihoc';
+  document.getElementById('view-baihoc').style.display='block';
+  document.getElementById('view-tailieu').style.display='none';
+  buildSubjectTabs();
+  renderLessons();
+}
+
+
+// ===== SWITCH VIEW =====
 function switchView(v){
   currentView = v;
   document.getElementById('view-baihoc').style.display = v==='baihoc'?'block':'none';
