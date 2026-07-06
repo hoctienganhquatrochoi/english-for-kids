@@ -222,15 +222,6 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
 </div>
 
 <!-- CLASS TABS -->
-<!-- FEATURED SECTION -->
-<div id="featured-section" style="display:none;background:linear-gradient(135deg,#667eea,#764ba2);padding:14px 16px;">
-  <div style="max-width:1040px;margin:0 auto;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-      <div style="color:white;font-weight:900;font-size:15px;" id="featured-title">⭐ Nổi bật</div>
-    </div>
-    <div id="featured-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;"></div>
-  </div>
-</div>
 
 <div class="class-tabs-bar">
   <div class="class-tabs-wrap">
@@ -250,6 +241,15 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
 </div>
 
 <!-- MAIN CONTENT -->
+<!-- FEATURED SECTION -->
+<div id="featured-section" style="display:none;background:linear-gradient(135deg,#667eea,#764ba2);padding:14px 16px;">
+  <div style="max-width:1040px;margin:0 auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div style="color:white;font-weight:900;font-size:15px;" id="featured-title">⭐ Nổi bật</div>
+    </div>
+    <div id="featured-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;"></div>
+  </div>
+</div>
 <div class="main-wrap">
   
   </div>
@@ -1034,7 +1034,7 @@ function apTab(btn){
   ['add','docs','list','classes','subjects','accounts','settings'].forEach(t=>{
     document.getElementById('pane-'+t).style.display=t===name?'block':'none';
   });
-  if(name==='list'){ buildAdminFCls(); renderAdminList(); }
+  if(name==='list'){ buildAdminFCls(); buildAdminSubjFilter(); renderAdminList(); }
   if(name==='classes') renderClsList();
   if(name==='docs'){ buildDocClassSel(); renderDocList(); }
   if(name==='subjects'){ buildSubjClsSel(); renderSubjectList(); }
