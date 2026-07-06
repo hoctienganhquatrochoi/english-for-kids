@@ -1309,13 +1309,7 @@ function buildSubjectTabs(){
     // Show subject tabs section
     if(section) section.style.display='block';
     const SCOLORS = ['#9B59B6','#E74C3C','#27AE60','#2980B9','#F39C12','#16A085','#8E44AD','#D35400'];
-    // Add "Tất cả" tab first
-    const allActive = activeSubject===null && currentView==='baihoc';
-    tabs.push(`<button onclick="selectSubject(null)"
-      style="flex-shrink:0;padding:8px 20px;border-radius:50px;font-size:13px;font-weight:700;font-family:'Nunito',sans-serif;border:none;cursor:pointer;transition:all 0.18s;display:inline-flex;align-items:center;gap:6px;
-      background:${allActive?'#555':'#55555522'};color:${allActive?'white':'#555'};">
-      Tất cả
-    </button>`);
+    // No "Tất cả" tab - removed by user request
     subjects.forEach((sub,i)=>{
       const active = activeSubject===sub && currentView==='baihoc';
       const col = SCOLORS[i % SCOLORS.length];
