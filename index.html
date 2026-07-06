@@ -575,9 +575,18 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
           <select id="subj-cls-sel" onchange="renderSubjectList()" style="width:100%;padding:8px 12px;border:2px solid #e8e0ff;border-radius:10px;font-size:13px;font-family:'Nunito',sans-serif;outline:none;margin-top:4px;"></select>
         </div>
         <div id="subj-list" style="margin-bottom:12px;"></div>
-        <div style="display:flex;gap:8px;">
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
           <input id="subj-new-input" placeholder="Tên môn mới VD: Toán, Tiếng Việt..." style="flex:1;padding:8px 12px;border:2px solid #e8e0ff;border-radius:10px;font-size:13px;font-family:'Nunito',sans-serif;outline:none;" onkeydown="if(event.key==='Enter') addSubject()"/>
           <button onclick="addSubject()" style="background:#9B59B6;color:white;border:none;border-radius:10px;padding:8px 16px;font-weight:800;font-size:13px;cursor:pointer;">➕ Thêm</button>
+        </div>
+        <div style="background:#FEF3C7;border-radius:12px;padding:12px;border:2px solid #FCD34D;">
+          <div style="font-size:12px;font-weight:800;color:#92400E;margin-bottom:8px;">⚡ Gán môn hàng loạt cho bài cũ</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select id="subj-bulk-sel" style="flex:1;padding:7px 10px;border:2px solid #FCD34D;border-radius:8px;font-size:13px;font-family:'Nunito',sans-serif;outline:none;">
+              <option value="">-- Chọn môn --</option>
+            </select>
+            <button onclick="bulkAssignSubject()" style="background:#F59E0B;color:white;border:none;border-radius:8px;padding:8px 14px;font-weight:800;font-size:12px;cursor:pointer;">Gán tất cả bài chưa có môn</button>
+          </div>
         </div>
       </div>
 
@@ -1242,41 +1251,33 @@ function buildSubjectTabs(){
   const bar = document.getElementById('subject-tabs-bar');
   if(!bar) return;
   
-  // Get subjects for active class
+  // Get subjects for active class (from DB + lessons)
   const cl = lessons.filter(l=>l.classId===activeClass);
-  const subjects = [...new Set(cl.map(l=>l.subject||'').filter(Boolean))];
+  const fromLessons = [...new Set(cl.map(l=>l.subject||'').filter(Boolean))];
+  const stored = subjectsData[activeClass] || [];
+  const subjects = [...new Set([...stored, ...fromLessons])];
   
-  // Build tabs: subjects + Tài Liệu
   let tabs = [];
   
-  if(subjects.length > 0){
-    // Has multiple subjects - show subject tabs
-    const allTab = `<button onclick="selectSubject(null)" 
-      style="padding:9px 16px;border:none;background:none;font-size:13px;font-weight:${activeSubject===null&&currentView==='baihoc'?'800':'600'};cursor:pointer;color:${activeSubject===null&&currentView==='baihoc'?'#9B59B6':'#aaa'};border-bottom:3px solid ${activeSubject===null&&currentView==='baihoc'?'#9B59B6':'transparent'};font-family:'Nunito',sans-serif;white-space:nowrap;">
-      📚 Tất cả
-    </button>`;
-    tabs.push(allTab);
-    
-    subjects.forEach(sub=>{
+  if(subjects.length > 1){
+    // Multiple subjects - show subject tabs (no "Tất cả")
+    subjects.forEach((sub,i)=>{
       const active = activeSubject===sub && currentView==='baihoc';
-      tabs.push(`<button onclick="selectSubject('${sub}')"
-        style="padding:9px 16px;border:none;background:none;font-size:13px;font-weight:${active?'800':'600'};cursor:pointer;color:${active?'#9B59B6':'#aaa'};border-bottom:3px solid ${active?'#9B59B6':'transparent'};font-family:'Nunito',sans-serif;white-space:nowrap;">
-        ${sub}
-      </button>`);
+      tabs.push(`<div style="display:flex;align-items:center;gap:2px;">
+        <button onclick="selectSubject('${sub}')"
+          style="padding:9px 16px;border:none;background:none;font-size:13px;font-weight:${active?'900':'700'};cursor:pointer;color:${active?'#7C3AED':'#555'};border-bottom:3px solid ${active?'#9B59B6':'transparent'};font-family:'Nunito',sans-serif;white-space:nowrap;">
+          ${sub}
+        </button>
+      </div>`);
     });
+    // Auto select first subject if none selected
+    if(activeSubject===null && currentView==='baihoc'){
+      setTimeout(()=>selectSubject(subjects[0]),50);
+    }
   } else {
-    // No subjects - just show Bài Học tab
-    tabs.push(`<button onclick="selectSubject(null)"
-      style="padding:9px 28px;border:none;background:none;font-size:13px;font-weight:${currentView==='baihoc'?'800':'600'};cursor:pointer;color:${currentView==='baihoc'?'#9B59B6':'#aaa'};border-bottom:3px solid ${currentView==='baihoc'?'#9B59B6':'transparent'};font-family:'Nunito',sans-serif;">
-      📚 Bài Học
-    </button>`);
+    // 0 or 1 subject - show all lessons directly, no tab needed
+    if(activeSubject !== null){ activeSubject = null; }
   }
-  
-  // Always add Tài Liệu tab
-  tabs.push(`<button onclick="switchView('tailieu')"
-    style="padding:9px 16px;border:none;background:none;font-size:13px;font-weight:${currentView==='tailieu'?'800':'600'};cursor:pointer;color:${currentView==='tailieu'?'#9B59B6':'#aaa'};border-bottom:3px solid ${currentView==='tailieu'?'#9B59B6':'transparent'};font-family:'Nunito',sans-serif;white-space:nowrap;">
-    📄 Tài Liệu
-  </button>`);
   
   bar.innerHTML = tabs.join('');
 }
@@ -2052,15 +2053,34 @@ function renderSubjectList(){
   const el = document.getElementById('subj-list');
   if(!subjects.length){
     el.innerHTML = '<p style="color:#aaa;font-size:13px;text-align:center;padding:12px;">Chưa có môn học nào — thêm môn bên dưới!</p>';
-    return;
+  } else {
+    el.innerHTML = subjects.map((s,i)=>`
+      <div style="display:flex;align-items:center;gap:8px;background:#f8f4ff;border-radius:10px;padding:8px 12px;margin-bottom:6px;">
+        <span style="flex:1;font-weight:700;font-size:14px;">📖 ${s}</span>
+        <button onclick="deleteSubject('${classId}',${i})" style="background:#FEE2E2;color:#DC2626;border:none;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;">🗑️</button>
+      </div>`).join('');
   }
-  el.innerHTML = subjects.map((s,i)=>`
-    <div style="display:flex;align-items:center;gap:8px;background:#f8f4ff;border-radius:10px;padding:8px 12px;margin-bottom:6px;">
-      <span style="flex:1;font-weight:700;font-size:14px;">📖 ${s}</span>
-      <button onclick="deleteSubject('${classId}',${i})" style="background:#FEE2E2;color:#DC2626;border:none;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;">🗑️</button>
-    </div>`).join('');
-  // Also update form dropdown
+  // Update bulk select
+  const bulkSel = document.getElementById('subj-bulk-sel');
+  if(bulkSel) bulkSel.innerHTML = '<option value="">-- Chọn môn --</option>' + subjects.map(s=>`<option value="${s}">${s}</option>`).join('');
   buildSubjectDropdown();
+}
+
+async function bulkAssignSubject(){
+  const classId = document.getElementById('subj-cls-sel')?.value;
+  const subject = document.getElementById('subj-bulk-sel')?.value;
+  if(!classId||!subject){ showToast('⚠️ Chọn môn trước!'); return; }
+  // Find lessons in this class with no subject
+  const toUpdate = lessons.filter(l=>l.classId===classId && !l.subject);
+  if(!toUpdate.length){ showToast('✅ Tất cả bài đã có môn rồi!'); return; }
+  showToast('⏳ Đang gán '+toUpdate.length+' bài...');
+  await Promise.all(toUpdate.map(l=>
+    fetch(SUPA_URL+'/rest/v1/lessons?id=eq.'+l.id,{method:'PATCH',headers:HEADERS,body:JSON.stringify({subject})})
+  ));
+  toUpdate.forEach(l=>l.subject=subject);
+  buildSubjectTabs();
+  renderLessons();
+  showToast('✅ Đã gán môn "'+subject+'" cho '+toUpdate.length+' bài!');
 }
 
 async function addSubject(){
