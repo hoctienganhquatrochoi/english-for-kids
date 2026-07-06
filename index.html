@@ -48,7 +48,7 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
 .cls-tab[data-color="indigo"]{background:#5B6EE8;}
 
 /* MAIN */
-.main-wrap{max-width:1040px;margin:0 auto;padding:20px 16px 100px;}
+.main-wrap{max-width:1040px;margin:0 auto;padding:12px 16px 100px;}
 .class-info-bar{background:white;border-radius:14px;padding:12px 18px;margin-bottom:18px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 10px rgba(0,0,0,0.07);border-left:6px solid #9B59B6;}
 .cib-emoji{font-size:28px;}
 .cib-text{}
@@ -244,7 +244,7 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
   
   </div>
   <!-- BAI HOC view -->
-  <div id="view-baihoc">
+  <div id="view-baihoc" style="padding-top:0;">
     <div class="lessons-grid" id="lessons-grid"></div>
     <div class="pagination" id="pagination"></div>
   </div>
@@ -887,11 +887,16 @@ function renderClassInfo(){
 // ===== RENDER LESSONS =====
 function renderLessons(){
   const grid=document.getElementById('lessons-grid'), pg=document.getElementById('pagination');
-  let cl=lessons.filter(l=>l.classId===activeClass);
-  // Sort by unit naturally: Unit 1, Unit 2... then by title
+  let cl=lessons.filter(l=>{
+    if(l.classId!==activeClass) return false;
+    // Filter by subject if selected
+    if(activeSubject!==null && (l.subject||'')!==activeSubject) return false;
+    return true;
+  });
+  // Sort by sort_order first, then unit naturally
   cl.sort((a,b)=>{
+    if((a.sort_order||0)!==(b.sort_order||0)) return (a.sort_order||0)-(b.sort_order||0);
     const ua=a.unit||'', ub=b.unit||'';
-    // Extract number from unit name
     const na=parseInt(ua.replace(/\D/g,''))||0, nb=parseInt(ub.replace(/\D/g,''))||0;
     if(na!==nb) return na-nb;
     return ua.localeCompare(ub,'vi');
