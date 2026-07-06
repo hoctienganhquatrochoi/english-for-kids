@@ -930,19 +930,36 @@ function renderLessons(){
   let cl=lessons.filter(l=>{
     // Check primary class
     const isPrimary = String(l.classId)===String(activeClass);
-    // Check extra_classes: stored as "classId" or "classId:subject"
-    const isExtra = (l.extra_classes||[]).some(e=>{
-      const parts = String(e).split(':');
-      const eCls = parts[0];
-      const eSubj = parts[1]||'';
-      if(String(eCls) !== String(activeClass)) return false;
-      if(eSubj) return activeSubject===null || activeSubject===eSubj;
-      return true;
+    
+    // Check extra_classes
+    const extraEntry = (l.extra_classes||[]).find(e=>{
+      const eCls = String(e).split(':')[0];
+      return String(eCls) === String(activeClass);
     });
+    const isExtra = !!extraEntry;
+    
     if(!isPrimary && !isExtra) return false;
-    // Subject filter only for primary lessons
-    if(isPrimary && activeSubject!==null && (l.subject||'')!==activeSubject) return false;
+    
+    if(isPrimary){
+      // Primary: filter by subject normally
+      if(activeSubject!==null && (l.subject||'')!==activeSubject) return false;
+    } else {
+      // Extra: use subject from extra_classes entry
+      const eSubj = String(extraEntry).split(':')[1]||'';
+      if(activeSubject!==null){
+        if(eSubj && eSubj!==activeSubject) return false;
+        if(!eSubj) return true; // no subject specified = show in all tabs
+      }
+    }
     return true;
+  });
+  // Store extra subject for display
+  cl = cl.map(l=>{
+    const isPrimary = String(l.classId)===String(activeClass);
+    if(isPrimary) return l;
+    const extraEntry = (l.extra_classes||[]).find(e=>String(e).split(':')[0]===String(activeClass));
+    const eSubj = extraEntry ? String(extraEntry).split(':')[1]||'' : '';
+    return {...l, _displaySubject: eSubj || l.subject};
   });
   // Sort by sort_order first, then unit naturally
   cl.sort((a,b)=>{
