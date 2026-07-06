@@ -927,6 +927,10 @@ function renderLessons(){
   const hasSubjectLessons = lessons.filter(l=>l.classId===activeClass && l.subject).length > 0;
   if(!hasSubjectLessons && activeSubject !== null) activeSubject = null;
   
+  // DEBUG: log first lesson's extra_classes
+  const dbgLesson = lessons.find(l=>(l.extra_classes||[]).length>0);
+  if(dbgLesson) console.log('DEBUG extra_classes:', dbgLesson.title, dbgLesson.extra_classes, 'activeClass:', activeClass);
+  
   let cl=lessons.filter(l=>{
     // Check primary class
     const isPrimary = String(l.classId)===String(activeClass);
