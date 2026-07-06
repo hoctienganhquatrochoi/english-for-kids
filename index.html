@@ -561,7 +561,7 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
       <div id="pane-list" style="display:none">
         <div style="display:flex;gap:8px;margin-bottom:12px">
           <input class="finput" id="admin-q" placeholder="🔍 Tìm bài..." oninput="renderAdminList()" style="flex:1"/>
-          <select class="fselect" id="admin-fcls" onchange="renderAdminList()" style="width:130px">
+          <select class="fselect" id="admin-fcls" onchange="buildAdminSubjFilter();renderAdminList();" style="width:130px">
             <option value="">Tất cả lớp</option>
           </select>
         </div>
@@ -1058,6 +1058,19 @@ function buildFClassSel(){
   const o=classes.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
   document.getElementById('f-class').innerHTML=o;
 }
+
+function buildAdminSubjFilter(){
+  const classId = document.getElementById('admin-fcls')?.value||'';
+  const sel = document.getElementById('admin-fsubj');
+  if(!sel) return;
+  const cur = sel.value;
+  const subjects = classId ? getSubjectsForClass(classId) :
+    [...new Set(lessons.filter(l=>l.subject).map(l=>l.subject))];
+  sel.innerHTML = '<option value="">Tất cả môn</option>' +
+    subjects.map(s=>`<option value="${s}">${s}</option>`).join('');
+  if(subjects.includes(cur)) sel.value = cur;
+}
+
 function buildAdminFCls(){
   const sel=document.getElementById('admin-fcls'); if(!sel) return;
   const current = sel.value;
