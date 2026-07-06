@@ -913,11 +913,12 @@ function renderLessons(){
   const pages=Math.ceil(cl.length/PER_PAGE);
   if(page>pages) page=1;
   const slice=cl.slice((page-1)*PER_PAGE, page*PER_PAGE);
-  const canAccess = currentUser && hasAccess(activeClass);
+  const canAccess = currentUser && hasAccess(activeClass, activeSubject);
   grid.innerHTML=slice.map((l,i)=>{
     const now = new Date();
     const isFree = l.is_public === true && (!l.public_until || new Date(l.public_until) > now);
-    return lessonCard(l, isFree || canAccess);
+    const lessonAccess = canAccess || (currentUser && hasAccess(activeClass, l.subject||''));
+    return lessonCard(l, isFree || lessonAccess);
   }).join('');
   if(pages<=1){ pg.innerHTML=''; return; }
   let ph=`<span class="page-note">Nhiều bài hơn thì chuyển trang</span>`;
@@ -2304,27 +2305,62 @@ async function loadAccounts(){
   } catch(e){ studentAccounts=[]; }
 }
 
-function buildAccClassChecks(){
+function buildAccClassChecks(currentAccess){
   const el = document.getElementById('acc-class-checks');
   if(!el) return;
-  el.innerHTML = classes.map(c=>`
-    <label style="display:flex;align-items:center;gap:5px;background:#f3f0ff;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px;font-weight:700;">
-      <input type="checkbox" value="${c.id}" style="accent-color:#9B59B6;width:15px;height:15px;"/>
-      ${c.emoji||'📚'} ${c.name}
-    </label>`).join('');
+  const access = currentAccess || [];
+  el.innerHTML = classes.map(c=>{
+    const subjects = getSubjectsForClass(c.id);
+    const clsChecked = access.includes(c.id);
+    
+    if(subjects.length > 1){
+      // Has subjects - show class + each subject
+      const subjHtml = subjects.map(s=>{
+        const key = c.id+':'+s;
+        const checked = access.includes(key) || clsChecked;
+        return `<label style="display:flex;align-items:center;gap:4px;background:#f0f9ff;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px;font-weight:700;margin-left:8px;">
+          <input type="checkbox" value="${key}" ${checked?'checked':''} style="accent-color:#2980B9;width:13px;height:13px;"/>
+          📖 ${s}
+        </label>`;
+      }).join('');
+      return `<div style="background:#f3f0ff;border-radius:8px;padding:6px 10px;margin-bottom:4px;">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;font-weight:800;margin-bottom:4px;">
+          <input type="checkbox" value="${c.id}" ${clsChecked?'checked':''} onchange="toggleClassAll(this,'${c.id}')" style="accent-color:#9B59B6;width:15px;height:15px;"/>
+          ${c.emoji||'📚'} ${c.name} <span style="font-size:10px;color:#888;font-weight:500;">(tất cả)</span>
+        </label>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;">${subjHtml}</div>
+      </div>`;
+    } else {
+      // No subjects - just class checkbox
+      return `<label style="display:flex;align-items:center;gap:5px;background:#f3f0ff;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px;font-weight:700;">
+        <input type="checkbox" value="${c.id}" ${clsChecked?'checked':''} style="accent-color:#9B59B6;width:15px;height:15px;"/>
+        ${c.emoji||'📚'} ${c.name}
+      </label>`;
+    }
+  }).join('');
+}
+
+function toggleClassAll(cb, classId){
+  // When class checkbox clicked, check/uncheck all its subjects
+  const checked = cb.checked;
+  const subjects = getSubjectsForClass(classId);
+  subjects.forEach(s=>{
+    const inp = document.querySelector('#acc-class-checks input[value="'+classId+':'+s+'"]');
+    if(inp) inp.checked = checked;
+  });
 }
 
 function showAccountForm(id=null){
   editingAccId = id;
   const form = document.getElementById('acc-form');
   form.style.display = 'block';
-  buildAccClassChecks();
   // default expires = 1 year from now
   const d = new Date(); d.setFullYear(d.getFullYear()+1);
   document.getElementById('acc-expires').value = d.toISOString().split('T')[0];
   if(id){
     const acc = studentAccounts.find(a=>a.id===id);
     if(!acc) return;
+    buildAccClassChecks(acc.class_access||[]);
     document.getElementById('acc-form-title').textContent = '✏️ Sửa tài khoản';
     document.getElementById('acc-fullname').value = acc.full_name||'';
     document.getElementById('acc-zalo').value = acc.zalo_phone||'';
@@ -2333,11 +2369,8 @@ function showAccountForm(id=null){
     document.getElementById('acc-group').value = acc.group_type||'student';
     document.getElementById('acc-note').value = acc.note||'';
     if(acc.expires_at) document.getElementById('acc-expires').value = acc.expires_at.split('T')[0];
-    // check boxes
-    const checks = document.querySelectorAll('#acc-class-checks input[type=checkbox]');
-    const access = acc.class_access||[];
-    checks.forEach(cb=>{ cb.checked = access.includes(cb.value); });
   } else {
+    buildAccClassChecks([]);
     document.getElementById('acc-form-title').textContent = '➕ Thêm tài khoản mới';
     ['acc-fullname','acc-zalo','acc-username','acc-password','acc-note'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('acc-group').value='student';
