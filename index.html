@@ -863,7 +863,7 @@ function buildTabs(){
     <button class="cls-tab${c.id===activeClass?' active':''}" data-color="${c.color||'purple'}" onclick="selectClass('${c.id}')">${c.name}</button>
   `).join('');
   const ac=classes.find(c=>c.id===activeClass);
-  if(ac) document.getElementById('class-info-bar').style.borderLeftColor=CLRMAP[ac.color]||'#9B59B6';
+  const infoBar=document.getElementById('class-info-bar'); if(ac&&infoBar) infoBar.style.borderLeftColor=CLRMAP[ac.color]||'#9B59B6';
 }
 function toSlug(str){ return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\u0111/g,'d').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
 function selectClass(id){
@@ -878,8 +878,10 @@ function selectClass(id){
 }
 function renderClassInfo(){
   const c=classes.find(x=>x.id===activeClass); if(!c) return;
-  document.getElementById('cib-emoji').textContent=c.emoji||'📚';
-  document.getElementById('cib-name').textContent=c.name;
+  const emo = document.getElementById('cib-emoji');
+  const nam = document.getElementById('cib-name');
+  if(emo) emo.textContent=c.emoji||'📚';
+  if(nam) nam.textContent=c.name;
 }
 
 // ===== RENDER LESSONS =====
