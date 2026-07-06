@@ -892,9 +892,12 @@ function renderClassInfo(){
 // ===== RENDER LESSONS =====
 function renderLessons(){
   const grid=document.getElementById('lessons-grid'), pg=document.getElementById('pagination');
+  // If activeSubject set but no lessons have subjects, reset to null
+  const hasSubjectLessons = lessons.filter(l=>l.classId===activeClass && l.subject).length > 0;
+  if(!hasSubjectLessons && activeSubject !== null) activeSubject = null;
+  
   let cl=lessons.filter(l=>{
     if(l.classId!==activeClass) return false;
-    // Filter by subject if selected
     if(activeSubject!==null && (l.subject||'')!==activeSubject) return false;
     return true;
   });
