@@ -1232,9 +1232,11 @@ function renderAdminList(){
   buildAdminFCls();
   const q=(document.getElementById('admin-q')?.value||'').toLowerCase();
   const fc=(document.getElementById('admin-fcls')?.value||'');
+  const fs=(document.getElementById('admin-fsubj')?.value||'');
   const fl=lessons.filter(l=>{
     if(fc&&l.classId!==fc) return false;
-    if(q){ const c=classes.find(x=>x.id===l.classId); return [l.title,l.unit,c?.name||''].join(' ').toLowerCase().includes(q); }
+    if(fs&&(l.subject||'')!==fs) return false;
+    if(q){ const c=classes.find(x=>x.id===l.classId); return [l.title,l.unit,l.subject||'',c?.name||''].join(' ').toLowerCase().includes(q); }
     return true;
   });
   const list=document.getElementById('admin-list');
