@@ -1073,7 +1073,7 @@ function apTab(btn){
   ['add','docs','list','classes','subjects','accounts','settings'].forEach(t=>{
     document.getElementById('pane-'+t).style.display=t===name?'block':'none';
   });
-  if(name==='list'){ buildAdminFCls(); buildAdminSubjFilter(); renderAdminList(); }
+  if(name==='list'){ buildAdminFCls(); loadSubjects().then(()=>{ buildAdminSubjFilter(); renderAdminList(); }); }
   if(name==='classes') renderClsList();
   if(name==='docs'){ buildDocClassSel(); renderDocList(); }
   if(name==='subjects'){ buildSubjClsSel(); renderSubjectList(); }
