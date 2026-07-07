@@ -927,18 +927,14 @@ function renderLessons(){
   const hasSubjectLessons = lessons.filter(l=>l.classId===activeClass && l.subject).length > 0;
   if(!hasSubjectLessons && activeSubject !== null) activeSubject = null;
   
-  // DEBUG: log first lesson's extra_classes
-  const dbgLesson = lessons.find(l=>(l.extra_classes||[]).length>0);
-  if(dbgLesson) console.log('DEBUG extra_classes:', dbgLesson.title, dbgLesson.extra_classes, 'activeClass:', activeClass);
-  
   let cl=lessons.filter(l=>{
     // Check primary class
     const isPrimary = String(l.classId)===String(activeClass);
     
     // Check extra_classes
     const extraEntry = (l.extra_classes||[]).find(e=>{
-      const eCls = String(e).split(':')[0];
-      return String(eCls) === String(activeClass);
+      const eCls = String(e||'').split(':')[0].trim();
+      return eCls === String(activeClass).trim();
     });
     const isExtra = !!extraEntry;
     
@@ -1207,7 +1203,7 @@ async function saveLesson(){
     description:document.getElementById('f-desc').value.trim(),
     image_url:document.getElementById('f-img-url').value.trim()||null,
     activities,
-    extra_classes: getExtraClassesFromForm()
+    extra_classes: getExtraClassesFromForm().map(String)
   };
   // New lesson: sort_order = max of same class + 1 (always go to bottom)
   if(!editingId){
@@ -2528,7 +2524,7 @@ function updateExtraSubject(classId, subj){
 function getExtraClassesFromForm(){
   const checks = document.querySelectorAll('#f-extra-checks input[type=checkbox]:checked');
   return Array.from(checks).map(cb=>{
-    const classId = cb.value;
+    const classId = String(cb.value);
     const subjSel = document.getElementById('extra-subj-'+classId);
     const subj = subjSel ? subjSel.value : '';
     return subj ? classId+':'+subj : classId;
