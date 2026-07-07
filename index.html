@@ -1029,6 +1029,8 @@ function lessonCard(l, unlocked=true){
 
 // ===== ADMIN =====
 function openAdmin(){
+  // Reload subjects fresh every time admin opens
+  loadSubjects();
   document.getElementById('admin-overlay').classList.add('open');
   if(isLoggedIn){ document.getElementById('login-section').style.display='none'; document.getElementById('admin-section').style.display='block'; updateStats(); buildFClassSel(); }
 }
@@ -2328,6 +2330,8 @@ let subjectsData = {}; // {classId: ["Toán","Tiếng Việt",...]}
 async function loadSubjects(){
   try{
     const rows = await sbGet('settings','key=like.subjects_%25');
+    // Reset and reload all
+    Object.keys(subjectsData).forEach(k=>delete subjectsData[k]);
     rows.forEach(r=>{
       const classId = r.key.replace('subjects_','');
       try{ subjectsData[classId] = JSON.parse(r.value); } catch(e){}
