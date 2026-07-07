@@ -1366,8 +1366,8 @@ function buildSubjectTabs(){
   
   const section = document.getElementById('subject-tabs-section');
   
-  if(subjects.length > 1){
-    // Show subject tabs section
+  if(subjects.length > 0){
+    // Show subject tabs section (1 or more subjects)
     if(section) section.style.display='block';
     const SCOLORS = ['#9B59B6','#E74C3C','#27AE60','#2980B9','#F39C12','#16A085','#8E44AD','#D35400'];
     // No "Tất cả" tab - removed by user request
@@ -1381,9 +1381,9 @@ function buildSubjectTabs(){
       </button>`);
     });
   } else {
-    // 0 or 1 subject - hide tabs, show all lessons
+    // 0 subjects - hide tabs, show all lessons
     if(section) section.style.display='none';
-    if(activeSubject !== null){ activeSubject = null; }
+    activeSubject = null;
   }
   
   bar.innerHTML = tabs.join('');
