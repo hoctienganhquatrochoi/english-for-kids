@@ -2336,11 +2336,12 @@ async function loadSubjects(){
 }
 
 function getSubjectsForClass(classId){
-  // Get subjects from DB + auto-detect from existing lessons
+  // Prefer stored subjects from DB
   const stored = subjectsData[classId] || [];
+  if(stored.length > 0) return stored;
+  // Fallback: auto-detect from lessons (only real subject names, not lesson titles)
   const fromLessons = [...new Set(lessons.filter(l=>l.classId===classId && l.subject).map(l=>l.subject))];
-  const merged = [...new Set([...stored, ...fromLessons])];
-  return merged;
+  return fromLessons;
 }
 
 function buildSubjClsSel(){
