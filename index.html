@@ -486,11 +486,18 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
           </div>
           <div class="fg full">
             <label class="flabel">Ảnh mindmap / sơ đồ <span class="hint">(tuỳ chọn, tối đa 5MB)</span></label>
-            <label style="display:flex;align-items:center;gap:10px;background:#EEF2FF;border:2px dashed #c7d2fe;border-radius:10px;padding:10px 14px;cursor:pointer;">
+            <div id="f-img-paste-zone" 
+              style="background:#EEF2FF;border:2px dashed #c7d2fe;border-radius:10px;padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;position:relative;"
+              onclick="document.getElementById('f-img-file').click()"
+              onpaste="handleImgPaste(event)"
+              ondragover="event.preventDefault();this.style.borderColor='#9B59B6'"
+              ondragleave="this.style.borderColor='#c7d2fe'"
+              ondrop="event.preventDefault();this.style.borderColor='#c7d2fe';handleImgDrop(event)"
+              tabindex="0">
               <span style="font-size:20px">📁</span>
-              <span style="font-size:13px;font-weight:700;color:#4338CA" id="f-img-label">Chọn ảnh từ máy</span>
-              <input type="file" accept="image/*" onchange="uploadLessonImage(this)" style="display:none"/>
-            </label>
+              <span style="font-size:13px;font-weight:700;color:#4338CA" id="f-img-label">Chọn ảnh / Dán ảnh (Ctrl+V) / Kéo thả</span>
+              <input type="file" id="f-img-file" accept="image/*" onchange="uploadLessonImage(this)" style="display:none"/>
+            </div>
             <div id="f-img-preview" style="margin-top:8px;display:none">
               <img id="f-img-thumb" style="max-width:160px;border-radius:8px;display:block;margin-bottom:6px;"/>
               <button type="button" onclick="clearLessonImage()" style="background:#FEF2F2;color:#DC2626;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;">✕ Xoá ảnh</button>
@@ -1514,13 +1521,31 @@ function buildDocClassSel(){
 
 // ===== UPLOAD DOC IMAGE TO SUPABASE STORAGE =====
 // ===== UPLOAD LESSON MINDMAP IMAGE =====
-async function uploadLessonImage(input){
-  const file = input.files[0];
+
+function handleImgPaste(e){
+  const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
+  if(!items) return;
+  for(const item of items){
+    if(item.type.startsWith('image/')){
+      e.preventDefault();
+      const file = item.getAsFile();
+      uploadLessonImageFile(file);
+      return;
+    }
+  }
+}
+
+function handleImgDrop(e){
+  const file = e.dataTransfer?.files?.[0];
+  if(file && file.type.startsWith('image/')) uploadLessonImageFile(file);
+}
+
+async function uploadLessonImageFile(file){
   if(!file) return;
   if(file.size > 5*1024*1024){ showToast('⚠️ Ảnh quá lớn! Tối đa 5MB'); return; }
   document.getElementById('f-img-label').textContent = '⏳ Đang tải lên...';
   try{
-    const fileName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.]/g,'_');
+    const fileName = Date.now() + '_' + (file.name||'paste.png').replace(/[^a-zA-Z0-9.]/g,'_');
     const uploadRes = await fetch(SUPA_URL+'/storage/v1/object/documents/'+fileName, {
       method:'POST',
       headers: {'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY, 'Content-Type': file.type},
@@ -1531,12 +1556,17 @@ async function uploadLessonImage(input){
     document.getElementById('f-img-url').value = publicUrl;
     document.getElementById('f-img-thumb').src = publicUrl;
     document.getElementById('f-img-preview').style.display='block';
-    document.getElementById('f-img-label').textContent = '✅ Đã tải lên! Chọn ảnh khác';
+    document.getElementById('f-img-label').textContent = '✅ Đã tải lên! Chọn/dán ảnh khác';
     showToast('✅ Đã tải ảnh lên!');
   } catch(e){
-    document.getElementById('f-img-label').textContent = 'Chọn ảnh từ máy';
-    showToast('❌ Tải ảnh thất bại, thử lại!');
+    document.getElementById('f-img-label').textContent = 'Chọn ảnh / Dán ảnh (Ctrl+V) / Kéo thả';
+    showToast('❌ Tải ảnh thất bại!');
   }
+}
+
+async function uploadLessonImage(input){
+  const file = input.files[0];
+  if(file) uploadLessonImageFile(file);
 }
 function clearLessonImage(){
   document.getElementById('f-img-url').value = '';
