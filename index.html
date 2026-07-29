@@ -1178,13 +1178,30 @@ async function saveClasses(){
 }
 
 // --- Act rows ---
+
+function extractIframeSrc(e, input){
+  const pasted = (e.clipboardData || window.clipboardData).getData('text');
+  // Check if it's an iframe code
+  if(pasted.includes('<iframe') && pasted.includes('src=')){
+    e.preventDefault();
+    const match = pasted.match(/src=["']([^"']+)["']/);
+    if(match){
+      // Convert embed URL to play URL if needed
+      let url = match[1];
+      // wordwall embed to play: /embed/ -> /play/ (optional, keep embed works too)
+      input.value = url;
+      showToast('✅ Đã lấy link từ iframe!');
+    }
+  }
+}
+
 function addActRow(cid, emoji='🔗', name='', link=''){
   const wrap=document.getElementById(cid);
   const row=document.createElement('div'); row.className='act-row';
   row.innerHTML=`
     <input class="act-emoji-inp" value="${emoji}" maxlength="4"/>
     <input class="finput act-name-inp" placeholder="Tên nút VD: Nghe & đọc lại" value="${name}"/>
-    <input class="finput act-link-inp" placeholder="https://wordwall.net/play/..." value="${link}"/>
+    <input class="finput act-link-inp" placeholder="https://wordwall.net/play/... hoặc dán iframe code" value="${link}" onpaste="extractIframeSrc(event,this)"/>
     <button class="act-del-btn" onclick="this.parentElement.remove()">✕</button>`;
   wrap.appendChild(row);
 }
@@ -1709,11 +1726,37 @@ document.getElementById('admin-overlay').addEventListener('click',e=>{ if(e.targ
 function openLessonSecure(encoded, classId){
   try{
     const pad = encoded.length % 4 ? encoded + '='.repeat(4 - encoded.length % 4) : encoded;
-    const url = atob(pad);
+    let url = atob(pad);
     if(!url){ return; }
-    const w = window.open(url, '_blank');
-    if(!w) window.location.href = url;
+    
+    // Only use iframe for embed URLs, open tab for play URLs
+    const isEmbed = url.includes('/embed/');
+    
+    if(isEmbed){
+      // Open in iframe popup
+      const popup = document.getElementById('lesson-iframe-popup');
+      const iframe = document.getElementById('lesson-iframe');
+      if(popup && iframe){
+        iframe.src = url;
+        popup.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      } else {
+        window.open(url, '_blank');
+      }
+    } else {
+      // Open in new tab (play URLs)
+      const w = window.open(url, '_blank');
+      if(!w) window.location.href = url;
+    }
   } catch(e){ console.error('Link error', e); }
+}
+
+function closeLesson(){
+  const popup = document.getElementById('lesson-iframe-popup');
+  const iframe = document.getElementById('lesson-iframe');
+  if(popup) popup.style.display='none';
+  if(iframe) iframe.src='';
+  document.body.style.overflow='';
 }
 
 function openLesson(e, url){
@@ -1961,6 +2004,9 @@ function renderFeatured(){
     </div>`;
   }).join('');
 }
+
+
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeLesson(); });
 
 // ===== LOGIN SYSTEM =====
 
