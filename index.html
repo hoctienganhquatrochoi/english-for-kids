@@ -242,12 +242,12 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
 
 <!-- MAIN CONTENT -->
 <!-- FEATURED SECTION -->
-<div id="featured-section" style="display:none;background:linear-gradient(135deg,#667eea,#764ba2);padding:14px 16px;">
+<div id="featured-section" style="display:none;background:linear-gradient(135deg,#667eea,#764ba2);padding:10px 0 0;">
   <div style="max-width:1040px;margin:0 auto;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
       <div style="color:white;font-weight:900;font-size:15px;" id="featured-title">⭐ Nổi bật</div>
     </div>
-    <div id="featured-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;"></div>
+    <div id="featured-grid" style="display:flex;flex-direction:column;gap:12px;"></div>
   </div>
 </div>
 <div class="main-wrap">
@@ -1995,15 +1995,21 @@ function renderFeatured(){
     
     if(embedAct){
       // Show iframe game directly for first featured lesson with embed
-      html += `<div style="background:white;border-radius:14px;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,0.15);">
-        <div style="padding:10px 12px;display:flex;align-items:center;justify-content:space-between;">
+      html += `<div style="background:white;overflow:hidden;">
+        <div style="padding:10px 16px;display:flex;align-items:center;justify-content:space-between;">
           <div>
             <span style="background:#f3f0ff;color:#7C3AED;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;">${c?.emoji||''} ${c?.name||''} ${l.subject?'• '+l.subject:''}</span>
             <div style="font-weight:800;font-size:14px;color:#1a1a2e;margin-top:4px;">${l.emoji||'📚'} ${l.title}</div>
           </div>
           ${daysLeft!==null?`<span style="background:#FEF3C7;color:#92400E;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap;">⏳ Còn ${daysLeft} ngày</span>`:''}
         </div>
-        <iframe src="${embedAct.link}" style="width:100%;height:380px;border:none;display:block;" allowfullscreen></iframe>
+        <div onclick="window.open('${embedAct.link}','_blank')" 
+  style="width:100%;height:320px;background:#f3f0ff;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border-top:3px solid #9B59B6;">
+  <div style="font-size:52px;margin-bottom:12px;">🎮</div>
+  <div style="font-weight:800;font-size:16px;color:#7C3AED;margin-bottom:6px;">${embedAct.name||'Chơi ngay'}</div>
+  <div style="font-size:13px;color:#aaa;margin-bottom:16px;">Bấm để chơi game</div>
+  <div style="background:#9B59B6;color:white;padding:10px 28px;border-radius:50px;font-weight:800;font-size:14px;">▶ Bắt đầu chơi</div>
+</div>
         ${(l.activities||[]).length > 1 ? `<div style="padding:10px 12px;display:flex;flex-direction:column;gap:5px;">
           ${(l.activities||[]).filter(a=>a!==embedAct).map((a,i)=>`
             <div class="act-bar ${AB[i%AB.length]}" onclick="openLessonSecure('${btoa(a.link||'').replace(/=/g,'')}','${l.classId}')" style="cursor:pointer;">
