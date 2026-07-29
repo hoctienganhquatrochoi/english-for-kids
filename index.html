@@ -247,7 +247,7 @@ body{font-family:'Nunito',sans-serif;background:#f5f0ff;color:#222;min-height:10
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
       <div style="color:white;font-weight:900;font-size:15px;" id="featured-title">⭐ Nổi bật</div>
     </div>
-    <div id="featured-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;"></div>
+    <div id="featured-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;"></div>
   </div>
 </div>
 <div class="main-wrap">
@@ -1981,28 +1981,61 @@ function renderFeatured(){
   }
   if(section) section.style.display='block';
   
-  grid.innerHTML = featured.map(l=>{
+  // First featured lesson with embed link = show iframe directly
+  // Other featured = show as cards
+  let html = '';
+  
+  featured.forEach((l,idx)=>{
     const c = classes.find(x=>x.id===l.classId);
     const now2 = new Date();
     const daysLeft = l.featured_until ? Math.ceil((new Date(l.featured_until)-now2)/(1000*60*60*24)) : null;
-    const acts = (l.activities||[]).map((a,i)=>`
-      <div class="act-bar ${AB[i%AB.length]}" onclick="openLessonSecure('${btoa(a.link||'').replace(/=/g,'')}','${l.classId}')" style="cursor:pointer;">
-        <div class="act-bar-icon">${a.emoji||'🔗'}</div>
-        <span class="act-bar-name">${a.name||''}</span>
-        <div class="act-bar-arrow">▶</div>
-      </div>`).join('');
-    return `<div style="background:white;border-radius:14px;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,0.15);">
-      ${l.image_url?`<a href="${l.image_url}" target="_blank"><img src="${l.image_url}" style="width:100%;max-height:140px;object-fit:cover;display:block;"/></a>`:''}
-      <div style="padding:12px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-          <span style="background:#f3f0ff;color:#7C3AED;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;">${c?.emoji||''} ${c?.name||''} ${l.subject?'• '+l.subject:''}</span>
-          ${daysLeft!==null?`<span style="background:#FEF3C7;color:#92400E;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;">⏳ Còn ${daysLeft} ngày</span>`:''}
+    
+    // Find first embed link in this lesson
+    const embedAct = (l.activities||[]).find(a=>a.link && a.link.includes('/embed/'));
+    
+    if(embedAct){
+      // Show iframe game directly for first featured lesson with embed
+      html += `<div style="background:white;border-radius:14px;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,0.15);">
+        <div style="padding:10px 12px;display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <span style="background:#f3f0ff;color:#7C3AED;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;">${c?.emoji||''} ${c?.name||''} ${l.subject?'• '+l.subject:''}</span>
+            <div style="font-weight:800;font-size:14px;color:#1a1a2e;margin-top:4px;">${l.emoji||'📚'} ${l.title}</div>
+          </div>
+          ${daysLeft!==null?`<span style="background:#FEF3C7;color:#92400E;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap;">⏳ Còn ${daysLeft} ngày</span>`:''}
         </div>
-        <div style="font-weight:800;font-size:14px;color:#1a1a2e;margin-bottom:8px;">${l.emoji||'📚'} ${l.title}</div>
-        <div style="display:flex;flex-direction:column;gap:5px;">${acts}</div>
-      </div>
-    </div>`;
-  }).join('');
+        <iframe src="${embedAct.link}" style="width:100%;height:380px;border:none;display:block;" allowfullscreen></iframe>
+        ${(l.activities||[]).length > 1 ? `<div style="padding:10px 12px;display:flex;flex-direction:column;gap:5px;">
+          ${(l.activities||[]).filter(a=>a!==embedAct).map((a,i)=>`
+            <div class="act-bar ${AB[i%AB.length]}" onclick="openLessonSecure('${btoa(a.link||'').replace(/=/g,'')}','${l.classId}')" style="cursor:pointer;">
+              <div class="act-bar-icon">${a.emoji||'🔗'}</div>
+              <span class="act-bar-name">${a.name||''}</span>
+              <div class="act-bar-arrow">▶</div>
+            </div>`).join('')}
+        </div>` : ''}
+      </div>`;
+    } else {
+      // Show as card with buttons
+      const acts = (l.activities||[]).map((a,i)=>`
+        <div class="act-bar ${AB[i%AB.length]}" onclick="openLessonSecure('${btoa(a.link||'').replace(/=/g,'')}','${l.classId}')" style="cursor:pointer;">
+          <div class="act-bar-icon">${a.emoji||'🔗'}</div>
+          <span class="act-bar-name">${a.name||''}</span>
+          <div class="act-bar-arrow">▶</div>
+        </div>`).join('');
+      html += `<div style="background:white;border-radius:14px;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,0.15);">
+        ${l.image_url?`<a href="${l.image_url}" target="_blank"><img src="${l.image_url}" style="width:100%;max-height:140px;object-fit:cover;display:block;"/></a>`:''}
+        <div style="padding:12px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span style="background:#f3f0ff;color:#7C3AED;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;">${c?.emoji||''} ${c?.name||''} ${l.subject?'• '+l.subject:''}</span>
+            ${daysLeft!==null?`<span style="background:#FEF3C7;color:#92400E;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;">⏳ Còn ${daysLeft} ngày</span>`:''}
+          </div>
+          <div style="font-weight:800;font-size:14px;color:#1a1a2e;margin-bottom:8px;">${l.emoji||'📚'} ${l.title}</div>
+          <div style="display:flex;flex-direction:column;gap:5px;">${acts}</div>
+        </div>
+      </div>`;
+    }
+  });
+  
+  grid.innerHTML = html;
 }
 
 
